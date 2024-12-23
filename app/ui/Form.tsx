@@ -1,3 +1,12 @@
 export default function Form() {
-    return <h1>Send message</h1>;
+    return (
+        <form>
+            <input
+                type="text"
+                placeholder="Escribe cualquier duda de la materia aquí"
+                required
+            />
+            <button type="submit">Enviar</button>
+        </form>
+    );
 }
