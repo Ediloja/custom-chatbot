@@ -1,30 +1,13 @@
 "use client";
 
-import { useChat } from "ai/react";
+import Form from "./ui/Form";
+import Chat from "./ui/Chat";
 
-export default function Chat() {
-    const { messages, input, handleInputChange, handleSubmit } = useChat();
+export default function Page() {
     return (
-        <div className="flex flex-col w-full max-w-md py-24 mx-auto stretch">
-            <div className="space-y-4">
-                {messages.map(message => (
-                    <div key={message.id} className="whitespace-pre-wrap">
-                        <div>
-                            <div className="font-bold">{message.role}</div>
-                            <p>{message.content}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            <form onSubmit={handleSubmit}>
-                <input
-                    className="fixed bottom-0 w-full max-w-md p-2 mb-8 border border-gray-300 rounded shadow-xl"
-                    value={input}
-                    placeholder="Say something..."
-                    onChange={handleInputChange}
-                />
-            </form>
-        </div>
+        <>
+            <Chat />
+            <Form />
+        </>
     );
 }
