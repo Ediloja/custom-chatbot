@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import cx from "./lib/cx";
 import "./globals.css";
 
 const inter = Inter({
@@ -19,7 +20,7 @@ export default function RootLayout({
     return (
         <html lang="en" className="scroll-smooth antialiased">
             <body
-                className={`${inter.className} text-sm md:text-base bg-white`}
+                className={cx(inter.className, "text-sm md:text-base bg-white")}
             >
                 {children}
             </body>
