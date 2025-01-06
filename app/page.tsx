@@ -1,7 +1,9 @@
 "use client";
 
 import { useChat, Message } from "ai/react";
-import Chat from "./ui/Chat";
+import cx from "./lib/cx";
+import Chat from "@/app/ui/chat";
+import Form from "./ui/form";
 
 export default function Page() {
     const { messages, input, handleInputChange, handleSubmit } = useChat({});
@@ -13,14 +15,21 @@ export default function Page() {
                     return <Chat key={message.id} {...message} />;
                 })}
 
-                <form onSubmit={handleSubmit}>
-                    <input
-                        name="prompt"
-                        value={input}
-                        onChange={handleInputChange}
-                    />
-                    <button type="submit">Submit</button>
-                </form>
+                <div
+                    className={cx(
+                        "fixed inset-x-0 bottom-0 z-10",
+                        "flex items-center justify-center",
+                        "bg-white",
+                    )}
+                >
+                    <div className="w-full max-w-screen-md rounded-xl px-4 py-6 md:px-5">
+                        <Form
+                            onSubmit={handleSubmit}
+                            input={input}
+                            onChange={handleInputChange}
+                        />
+                    </div>
+                </div>
             </div>
         </main>
     );
