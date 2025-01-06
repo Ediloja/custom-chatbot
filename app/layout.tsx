@@ -8,8 +8,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-    title: "RAG Chatbot",
-    description: "Custom RAG Chatbot for University Courses at UTPL",
+    title: "RAG Chatbot UTPL",
+    description:
+        "Chatbot personalizado con RAG para cursos académicos de la UTPL",
 };
 
 export default function RootLayout({

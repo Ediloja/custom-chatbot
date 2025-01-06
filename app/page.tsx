@@ -6,7 +6,17 @@ import Chat from "@/app/ui/chat";
 import Form from "./ui/form";
 
 export default function Page() {
-    const { messages, input, handleInputChange, handleSubmit } = useChat({});
+    const { messages, input, handleInputChange, handleSubmit } = useChat({
+        initialMessages: [
+            {
+                id: "0",
+                role: "system",
+                content: `**Bienvenido a UTPL Assistant**
+                
+Tu compañero ideal para resolver dudas de los cursos académicos.`,
+            },
+        ],
+    });
 
     return (
         <main className="relative mx-auto flex min-h-svh max-w-screen-md overflow-y-auto p-4 !pb-32 md:p-6 md:!pb-40">

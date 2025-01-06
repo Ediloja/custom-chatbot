@@ -9,7 +9,7 @@ export default function Chat({ content, role }: Message) {
         <article
             className={cx(
                 "mb-4 flex items-start gap-4 rounded-2xl px-10 py-5",
-                isUser ? "" : "bg-utpl-primary text-white",
+                isUser ? "" : "bg-emerald-50",
             )}
         >
             <Markdown
