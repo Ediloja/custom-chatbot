@@ -20,7 +20,7 @@ export default function RootLayout({
     return (
         <html lang="en" className="scroll-smooth antialiased">
             <body
-                className={cx(inter.className, "text-sm md:text-base bg-white")}
+                className={cx(inter.className, "bg-white text-sm md:text-base")}
             >
                 {children}
             </body>
