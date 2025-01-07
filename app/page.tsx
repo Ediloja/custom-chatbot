@@ -13,7 +13,7 @@ export default function Page() {
                 role: "system",
                 content: `**Bienvenido a UTPL Assistant**
                 
-Tu compañero ideal para resolver dudas de los cursos académicos.`,
+Tu compañero ideal para resolver dudas sobre los cursos académicos.`,
             },
         ],
     });
@@ -27,9 +27,7 @@ Tu compañero ideal para resolver dudas de los cursos académicos.`,
 
                 <div
                     className={cx(
-                        "fixed inset-x-0 bottom-0 z-10",
-                        "flex items-center justify-center",
-                        "bg-white",
+                        "fixed inset-x-0 bottom-0 z-10 flex items-center justify-center bg-white",
                     )}
                 >
                     <div className="w-full max-w-screen-md rounded-xl px-4 py-6 md:px-5">

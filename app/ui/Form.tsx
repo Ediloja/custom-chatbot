@@ -1,4 +1,5 @@
 import cx from "../lib/cx";
+import { IconArrowBack } from "@tabler/icons-react";
 
 export default function Form({ onSubmit, input, onChange }: any) {
     return (
@@ -14,7 +15,7 @@ export default function Form({ onSubmit, input, onChange }: any) {
                 required
                 className={cx(
                     "h-10 flex-1 rounded-xl pl-4 pr-12 transition md:h-12",
-                    "border border-gray-400 text-sm md:text-base",
+                    "border border-gray-400 text-sm text-black md:text-base",
                     "disabled:bg-gray-100",
                 )}
                 onChange={onChange}
@@ -28,7 +29,7 @@ export default function Form({ onSubmit, input, onChange }: any) {
                     "opacity-50",
                 )}
             >
-                Enviar
+                <IconArrowBack stroke={1.5} />
             </button>
         </form>
     );
