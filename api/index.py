@@ -1,95 +1,84 @@
 import os
-import json
-from typing import List
-from pydantic import BaseModel
 from dotenv import load_dotenv
+from typing import List
+
+#De utils
+from utils.prompt import prompt_template
+
+#FastAPI
+from pydantic import BaseModel
 from fastapi import FastAPI, Query
 from fastapi.responses import StreamingResponse
 
-# Importaciones de Langchain
+#LangChain
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_core.output_parsers import StrOutputParser
-
-# De utils
-from utils.prompt import prompt_general
+from langchain_core.runnables import RunnablePassthrough
+from langchain_pinecone import PineconeVectorStore
+from pinecone import Pinecone
 
 # Cargar variables de entorno
-load_dotenv(".env.local")
-
-app = FastAPI()
-
-# Configurar el modelo de Gemini usando Langchain
-llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash",
-    google_api_key=os.environ.get("GEMINI_API_KEY"),
-    streaming=True,
-    temperature=0.3
-)
+load_dotenv(".env.local") 
+PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 
 class Request(BaseModel):
     messages: List[dict]
 
-def convert_messages_to_langchain(messages: List[dict]):
-    """Convierte los mensajes al formato de Langchain."""
-    langchain_messages = [
-        SystemMessage(content=prompt_general)
-    ]
-    
-    for msg in messages:
-        role = msg.get('role')
-        content = msg.get('content')
-        if role == 'user':
-            langchain_messages.append(HumanMessage(content=content))
-        elif role == 'assistant':
-            langchain_messages.append(AIMessage(content=content))
-    
-    return langchain_messages
+app = FastAPI()
 
-def stream_text(messages: List[dict]):
-    try:
-        # Convertir mensajes al formato de Langchain
-        chat_history = convert_messages_to_langchain(messages)
-        
-        # Crear un template de prompt con el historial de chat
-        prompt = ChatPromptTemplate.from_messages(chat_history)
-        
-        # Crear cadena con output parser para streaming
-        chain = prompt | llm | StrOutputParser()
-        
-        # Generar stream de respuesta
-        for chunk in chain.stream({}):
-            # Formato similar al stream de OpenAI
-            yield '0:{text}\n'.format(text=json.dumps(chunk))
+# Modelo de Embeddings
+embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
 
-        # Chunk final de finalización
-        yield 'e:{{"finishReason":"stop","usage":{{"promptTokens":0,"completionTokens":0}},"isContinued":false}}\n'
+# Conexión a Pinecone
+pc = Pinecone(api_key=PINECONE_API_KEY)
+index_name = "tutormad" #se está usando un solo index pero con múltiples namespaces
+index = pc.Index(index_name) 
+namespace = "curso_intro_MAD_2025"
+vector_store = PineconeVectorStore(index=index, embedding=embeddings, namespace=namespace)
 
-    except Exception as e:
-        import traceback
-        # Imprimir error detallado
-        print(f"Error en stream_text: {str(e)}")
-        print(traceback.format_exc())
-        
-        # Enviar mensaje de error
-        yield '0:{text}\n'.format(text=json.dumps(f"Error interno: {str(e)}"))
 
+# Configurar el modelo de Gemini usando Langchain
+llm = ChatGoogleGenerativeAI(
+    model="gemini-1.5-flash",
+    google_api_key=GOOGLE_API_KEY,
+    streaming=True,
+    temperature=0.3,
+)
+
+def rag(pregunta):
+  retriever = vector_store.as_retriever(
+    search_type="similarity_score_threshold",
+    search_kwargs={"k": 6, "score_threshold": 0.5},
+  )
+
+  chain = (
+    {"context": retriever, "question": RunnablePassthrough()}
+    | prompt_template
+    | llm
+    | StrOutputParser()
+  )
+  result = chain.invoke(pregunta)
+  print(result)
+
+
+#API
 @app.post("/api/chat")
 async def handle_chat_data(request: Request, protocol: str = Query('data')):
     try:
         messages = request.messages
-        response = StreamingResponse(stream_text(messages))
-        response.headers['x-vercel-ai-data-stream'] = 'v1'
-        return response
+        #response = StreamingResponse(stream_text(messages))
+        #response.headers['x-vercel-ai-data-stream'] = 'v1'
+        #return response
+        return {"message": "Hello from FastAPI!"}
     except Exception as e:
         import traceback
-        # Imprimir error completo para depuración
-        print(f"Error en handle_chat_data: {str(e)}")
-        print(traceback.format_exc())
-        
-        # Devolver un error más informativo
         return {
             "error": str(e),
             "traceback": traceback.format_exc()
         }
+    
+@app.get("/")
+async def root():
+    return {"message": "Hello from FastAPI!"}
