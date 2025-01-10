@@ -14,11 +14,8 @@ from fastapi.responses import StreamingResponse
 #LangChain
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_pinecone import PineconeVectorStore
-from langchain_core.runnables import RunnableMap
 from pinecone import Pinecone
 
 # Cargar variables de entorno
