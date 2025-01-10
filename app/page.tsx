@@ -6,31 +6,39 @@ import cx from "@/app/lib/cx";
 import Chat from "@/app/ui/chat";
 import Form from "@/app/ui/form";
 import Loading from "@/app/ui/loading";
+import Error from "@/app/ui/error";
 import Footer from "@/app/ui/footer";
 import { INITIAL_QUESTIONS } from "@/app/lib/questions";
 
 export default function Page() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
+    const [streaming, setStreaming] = useState<boolean>(false);
 
-    const [streaming, setStreaming] = useState(false);
-
-    const { messages, input, handleInputChange, handleSubmit, setInput } =
-        useChat({
-            initialMessages: [
-                {
-                    id: "0",
-                    role: "system",
-                    content: `**Bienvenido a UTPL Assistant**
+    const {
+        messages,
+        input,
+        handleInputChange,
+        handleSubmit,
+        setInput,
+        isLoading,
+        stop,
+        error,
+        reload,
+    } = useChat({
+        initialMessages: [
+            {
+                id: "0",
+                role: "system",
+                content: `**Bienvenido a UTPL Assistant**
                 
 Tu compañero ideal para resolver dudas sobre los cursos académicos.`,
-                },
-            ],
-
-            onResponse: () => {
-                setStreaming(false);
             },
-        });
+        ],
+        onResponse: () => {
+            setStreaming(false);
+        },
+    });
 
     function handleClickQuestion(value: string) {
         setInput(value);
@@ -68,6 +76,8 @@ Tu compañero ideal para resolver dudas sobre los cursos académicos.`,
 
                 {streaming && <Loading />}
 
+                {error && <Error />}
+
                 {messages.length === 1 && (
                     <div className="mt-4 grid gap-2 md:mt-6 md:grid-cols-2 md:gap-4">
                         {INITIAL_QUESTIONS.map((message) => {
@@ -100,7 +110,10 @@ Tu compañero ideal para resolver dudas sobre los cursos académicos.`,
                             input={input}
                             onSubmit={onSubmit}
                             onChange={handleInputChange}
-                            disabled={streaming}
+                            isLoading={isLoading}
+                            stop={stop}
+                            error={error}
+                            reload={reload}
                         />
                         <Footer />
                     </div>
