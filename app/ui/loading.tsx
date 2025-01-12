@@ -1,4 +1,4 @@
-import { Avatar } from "@/app/ui/chats";
+import { Avatar } from "@/app/ui/chat";
 import cx from "@/app/lib/cx";
 
 export default function Loading() {
