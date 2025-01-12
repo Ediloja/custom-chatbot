@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useChat, Message } from "ai/react";
 import cx from "@/app/lib/cx";
-import Chat from "@/app/ui/chat";
-import Form from "@/app/ui/forms";
+import Chat from "@/app/ui/chats";
+import Form from "@/app/ui/form";
 import Loading from "@/app/ui/loading";
 import Error from "@/app/ui/error";
 import Footer from "@/app/ui/footer";
