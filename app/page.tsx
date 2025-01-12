@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useChat, Message } from "ai/react";
 import cx from "@/app/lib/cx";
 import Chat from "@/app/ui/chat";
-import Form from "@/app/ui/form";
+import Form from "@/app/ui/forms";
 import Loading from "@/app/ui/loading";
 import Error from "@/app/ui/error";
 import Footer from "@/app/ui/footer";
@@ -40,7 +40,7 @@ Tu compañero ideal para resolver dudas sobre los cursos académicos.`,
         },
     });
 
-    function handleClickQuestion(value: string) {
+    function handleClickInitialQuestion(value: string) {
         setInput(value);
         setTimeout(() => {
             formRef.current?.dispatchEvent(
@@ -87,7 +87,9 @@ Tu compañero ideal para resolver dudas sobre los cursos académicos.`,
                                     type="button"
                                     className="cursor-pointer select-none rounded-xl border border-gray-200 bg-white p-3 text-left font-normal text-black hover:border-zinc-400 hover:bg-zinc-50 md:px-4 md:py-3"
                                     onClick={() =>
-                                        handleClickQuestion(message.content)
+                                        handleClickInitialQuestion(
+                                            message.content,
+                                        )
                                     }
                                 >
                                     {message.content}

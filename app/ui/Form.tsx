@@ -35,45 +35,46 @@ export default function Form({
             />
 
             {!isLoading && !error && (
-                <button
-                    type="submit"
-                    tabIndex={-1}
-                    className={cx(
-                        "absolute right-3 top-1/2 -translate-y-1/2",
-                        "opacity-50",
-                    )}
-                >
+                <Button type="submit">
                     <IconArrowBack stroke={1.5} color="black" />
-                </button>
+                </Button>
             )}
 
             {isLoading && (
-                <button
-                    type="button"
-                    onClick={() => stop()}
-                    tabIndex={-1}
-                    className={cx(
-                        "absolute right-3 top-1/2 -translate-y-1/2",
-                        "opacity-50",
-                    )}
-                >
+                <Button type="button" onClick={stop}>
                     <IconPlayerStop stroke={1.5} fill="black" />
-                </button>
+                </Button>
             )}
 
             {error && (
-                <button
-                    type="button"
-                    onClick={() => reload()}
-                    tabIndex={-1}
-                    className={cx(
-                        "absolute right-3 top-1/2 -translate-y-1/2",
-                        "opacity-50",
-                    )}
-                >
+                <Button type="button" onClick={reload}>
                     <IconRefresh stroke={1.5} color="black" />
-                </button>
+                </Button>
             )}
         </form>
+    );
+}
+
+export function Button({
+    children,
+    onClick = () => {},
+    type = "button",
+}: {
+    children: React.ReactNode;
+    onClick?: () => void;
+    type?: "button" | "submit" | "reset";
+}) {
+    return (
+        <button
+            type={type}
+            onClick={onClick}
+            tabIndex={-1}
+            className={cx(
+                "absolute right-3 top-1/2 -translate-y-1/2",
+                "opacity-50",
+            )}
+        >
+            {children}
+        </button>
     );
 }
