@@ -3,6 +3,17 @@ import { IconArrowBack } from "@tabler/icons-react";
 import { IconPlayerStop } from "@tabler/icons-react";
 import { IconRefresh } from "@tabler/icons-react";
 
+interface FormProps {
+    ref: any;
+    input: string;
+    onChange: (event: any) => void;
+    onSubmit: (event: any) => void;
+    isLoading: boolean;
+    stop: () => void;
+    error: any;
+    reload: () => void;
+}
+
 export default function Form({
     ref,
     input,
@@ -12,7 +23,7 @@ export default function Form({
     stop,
     error,
     reload,
-}: any) {
+}: FormProps) {
     return (
         <form
             onSubmit={onSubmit}

@@ -1,6 +1,6 @@
 import cx from "@/app/lib/cx";
 
-export default function error() {
+export default function Error() {
     return (
         <article
             className={cx(
