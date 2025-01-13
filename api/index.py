@@ -47,8 +47,11 @@ llm = ChatGoogleGenerativeAI(
 )
 
 
-def stream_rag_response(question: str):
+def stream_rag_response(messages: List[dict]):
     """Devuelve respuestas generadas con RAG como un stream."""
+    print("lista:", messages)
+    question = messages[0]['content']
+    print("question: ", question)
     retriever = vector_store.as_retriever(
         search_type="similarity_score_threshold",
         search_kwargs={"k": 6, "score_threshold": 0.5},
@@ -66,13 +69,14 @@ def stream_rag_response(question: str):
     result_stream = llm.stream(prompt.to_messages())
 
     for chunk in result_stream:
-        yield json.dumps({"content": chunk.content}) + "\n"
+        yield json.dumps({"0": chunk.content}) + "\n"
 
 #API
 @app.post("/api/chat")
-async def handle_chat_data(question: str, protocol: str = Query('data')):
+async def handle_chat_data(request: Request, protocol: str = Query('data')):
     try:
-        response = StreamingResponse(stream_rag_response(question))
+        messages = request.messages
+        response = StreamingResponse(stream_rag_response(messages))
         response.headers["x-vercel-ai-data-stream"] = "v1"
         return response
     except Exception as e:
