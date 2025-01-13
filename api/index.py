@@ -26,7 +26,11 @@ GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 class Request(BaseModel):
     messages: List[dict]
 
-app = FastAPI()
+app = FastAPI(
+    title="RAG API",
+    description="API para chatbot con RAG usando Gemini y Pinecone",
+    version="1.0.0"
+)
 
 # Modelo de Embeddings
 embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
@@ -48,18 +52,25 @@ llm = ChatGoogleGenerativeAI(
 
 
 def stream_rag_response(messages: List[dict]):
-    """Devuelve respuestas generadas con RAG como un stream."""
-    print("lista:", messages)
+    """Devuelve respuestas generadas con RAG como un stream compatible con Vercel AI SDK."""
     question = messages[0]['content']
-    print("question: ", question)
+    #print("lista:", messages)
+    #print("question: ", question)
+    
+    # Configuración del recuperador
     retriever = vector_store.as_retriever(
         search_type="similarity_score_threshold",
-        search_kwargs={"k": 6, "score_threshold": 0.5},
+        search_kwargs={"k": 4, "score_threshold": 0.6},
     )
 
-    # Recuperar contexto desde Pinecone
+     # Recuperar contexto desde Pinecone
     docs = retriever.invoke(question)
-    context = "\n".join(doc.page_content for doc in docs)
+    context_items = [
+        f"Página {doc.metadata.get('page', 'desconocida')}: {doc.page_content}"
+        for doc in docs
+    ]
+    context = "\n".join(context_items)
+    print(context)
 
     # Construir el mensaje con contexto y pregunta
     input_data = {"context": context, "question": question}
@@ -68,8 +79,12 @@ def stream_rag_response(messages: List[dict]):
     prompt = ChatPromptTemplate.from_template(prompt_template).format_prompt(**input_data)
     result_stream = llm.stream(prompt.to_messages())
 
+    # Iterar sobre los fragmentos generados y transmitirlos en formato Vercel AI SDK
     for chunk in result_stream:
-        yield json.dumps({"0": chunk.content}) + "\n"
+        yield "0:{text}\n".format(text=json.dumps(chunk.content))
+
+    yield 'e:{{"finishReason":"stop","usage":{{"promptTokens":0,"completionTokens":0}},"isContinued":false}}\n'
+
 
 #API
 @app.post("/api/chat")
@@ -85,7 +100,3 @@ async def handle_chat_data(request: Request, protocol: str = Query('data')):
             "error": str(e),
             "traceback": traceback.format_exc()
         }
-    
-@app.get("/")
-async def root():
-    return {"message": "Hello from FastAPI!"}
