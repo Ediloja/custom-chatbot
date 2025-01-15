@@ -10,6 +10,7 @@ from .utils.prompt import prompt_template
 from pydantic import BaseModel
 from fastapi import FastAPI, Query
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 #LangChain
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -19,7 +20,7 @@ from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone
 
 # Cargar variables de entorno
-load_dotenv(".env.local") 
+load_dotenv(".env") 
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 
@@ -31,6 +32,20 @@ app = FastAPI(
     description="API para chatbot con RAG usando Gemini y Pinecone",
     version="1.0.0"
 )
+
+# CORS
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)   
 
 # Modelo de Embeddings
 embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")

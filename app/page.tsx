@@ -26,6 +26,9 @@ export default function Page() {
         error,
         reload,
     } = useChat({
+        api: "http://127.0.0.1:8000/api/chat",
+        maxSteps: 4,
+        streamProtocol: "data",
         initialMessages: [
             {
                 id: "0",
@@ -76,8 +79,6 @@ Tu compañero ideal para resolver dudas sobre los cursos académicos.`,
 
                 {streaming && <Loading />}
 
-                {error && <Error />}
-
                 {messages.length === 1 && (
                     <div className="mt-4 grid gap-2 md:mt-6 md:grid-cols-2 md:gap-4">
                         {INITIAL_QUESTIONS.map((message) => {
@@ -98,6 +99,8 @@ Tu compañero ideal para resolver dudas sobre los cursos académicos.`,
                         })}
                     </div>
                 )}
+
+                {error && <Error />}
 
                 <div ref={messagesEndRef}></div>
 
