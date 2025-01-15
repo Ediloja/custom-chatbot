@@ -34,7 +34,7 @@ iniconfig==2.0.0
 Jinja2==3.1.4
 jsonpatch==1.33
 jsonpointer==3.0.0
-langchain-core==0.3.24
+langchain-core>=0.3.29,<0.4.0
 langchain-google-genai==2.0.7
 langchain-pinecone==0.2.2
 langchain-tests==0.3.8

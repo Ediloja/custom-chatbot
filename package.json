@@ -3,9 +3,8 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "dev": "concurrently \"npm run next-dev\" \"npm run fastapi-dev\"",
-        "next-dev": "next dev",
-        "fastapi-dev": "python3.12 -m uvicorn api.index:app --reload",
+        "dev": "concurrently \"next dev --turbopack\" \"npm run start-api\"",
+        "start-api": "bash -c 'python3.12 -m venv venv && source venv/bin/activate && pip install -r requirements.txt && uvicorn api.index:app --reload'",
         "build": "next build",
         "start": "next start",
         "lint": "next lint"
