@@ -68,7 +68,7 @@ llm = ChatGoogleGenerativeAI(
 
 def stream_rag_response(messages: List[dict]):
     """Devuelve respuestas generadas con RAG como un stream compatible con Vercel AI SDK."""
-    question = messages[0]['content']
+    question = messages[-1]['content']
     #print("lista:", messages)
     #print("question: ", question)
     
