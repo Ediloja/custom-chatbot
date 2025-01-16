@@ -33,9 +33,9 @@ export default function Page() {
             {
                 id: "0",
                 role: "system",
-                content: `**Bienvenido a UTPL Assistant**
-                
-Tu compañero ideal para resolver dudas sobre los cursos académicos.`,
+                content: `**¡Hola, Jaguar UTPL!**
+
+Bienvenido a tu compañero ideal para conquistar tus metas académicas.`,
             },
         ],
         onResponse: () => {

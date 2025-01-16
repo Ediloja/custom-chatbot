@@ -8,7 +8,7 @@ export default function Error() {
                 "bg-red-400 font-bold text-white",
             )}
         >
-            Ocurrió un problema. Inténtalo de nuevo.
+            No fue posible completar la acción. Vuelve a intentarlo.
         </article>
     );
 }
