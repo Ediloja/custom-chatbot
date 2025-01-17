@@ -96,9 +96,11 @@ def stream_rag_response(messages: List[dict]):
 
     # Iterar sobre los fragmentos generados y transmitirlos en formato Vercel AI SDK
     for chunk in result_stream:
-        yield "0:{text}\n".format(text=json.dumps(chunk.content))
+        # Cada chunk será un JSON válido en el formato esperado
+        yield '0:{text}\n'.format(text=json.dumps(chunk.content))
 
-    yield 'e:{{"finishReason":"stop","usage":{{"promptTokens":0,"completionTokens":0}},"isContinued":false}}\n'
+    # Mensaje de cierre del stream
+    yield '2:[{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0},"isContinued":false}]\n'
 
 
 #API
@@ -108,6 +110,10 @@ async def handle_chat_data(request: Request, protocol: str = Query('data')):
         messages = request.messages
         response = StreamingResponse(stream_rag_response(messages))
         response.headers["x-vercel-ai-data-stream"] = "v1"
+
+        # Muestra response en consola
+        print("response: ", response)
+
         return response
     except Exception as e:
         import traceback

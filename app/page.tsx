@@ -38,10 +38,15 @@ export default function Page() {
 Bienvenido a tu compañero ideal para conquistar tus metas académicas.`,
             },
         ],
+
         onResponse: () => {
             setStreaming(false);
         },
+
+        onError: (error) => console.log(`An error occurred ${error}`),
     });
+
+    console.log(messages);
 
     function handleClickInitialQuestion(value: string) {
         setInput(value);
@@ -77,8 +82,6 @@ Bienvenido a tu compañero ideal para conquistar tus metas académicas.`,
                     return <Chat key={message.id} {...message} />;
                 })}
 
-                {streaming && <Loading />}
-
                 {messages.length === 1 && (
                     <div className="mt-4 grid gap-2 md:mt-6 md:grid-cols-2 md:gap-4">
                         {INITIAL_QUESTIONS.map((message) => {
@@ -99,6 +102,8 @@ Bienvenido a tu compañero ideal para conquistar tus metas académicas.`,
                         })}
                     </div>
                 )}
+
+                {streaming && <Loading />}
 
                 {error && <Error />}
 
