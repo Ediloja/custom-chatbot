@@ -4,7 +4,7 @@
     "private": true,
     "scripts": {
         "dev": "concurrently \"next dev --turbopack\" \"npm run start-api\"",
-        "start-api": "bash -c 'python3.12 -m venv venv && source venv/bin/activate && uvicorn api.index:app --reload'",
+        "start-api": "bash -c 'python3.12 -m venv venv && source venv/bin/activate && pip3 install -r requirements.txt &&  uvicorn api.index:app --reload'",
         "build": "next build",
         "start": "next start",
         "lint": "next lint"
