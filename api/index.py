@@ -82,8 +82,9 @@ def stream_rag_response(messages: List[dict]):
         # Recuperar contexto desde Pinecone
         docs = retriever.invoke(question)
         context_items = [
-            f"Página {doc.metadata.get('page', 'desconocida')}: {doc.page_content} | Documento: {doc.metadata.get('doc_name', 'desconocido')}"
-            for doc in docs
+            #Página: '1': 'Contenido' \ Documento: 'Guía Didáctica'
+            f"Página {int(doc.metadata.get('page'))}: {doc.page_content} | Documento: {doc.metadata.get('doc_name', 'desconocido')}"
+            for doc in docs   
         ]
         #Formatear como una sola cadena de texto
         context = "\n".join(context_items)
