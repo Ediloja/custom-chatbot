@@ -24,6 +24,7 @@ load_dotenv(".env")
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 
+#Modelo de Respuestas
 class Request(BaseModel):
     messages: List[dict]
 
