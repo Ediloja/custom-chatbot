@@ -22,7 +22,7 @@ from pinecone import Pinecone
 # Cargar variables de entorno
 load_dotenv(".env") 
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+GOOGLE_GENERATIVE_AI_API_KEY = os.environ.get("GOOGLE_API_KEY")
 
 #Modelo de Respuestas
 class Request(BaseModel):
@@ -68,7 +68,7 @@ try:
     # Configurar el modelo de Gemini usando Langchain
     llm = ChatGoogleGenerativeAI(
         model="gemini-1.5-flash",  # Modelo especializado en resúmenes
-        google_api_key=GOOGLE_API_KEY,
+        google_api_key=GOOGLE_GENERATIVE_AI_API_KEY,
         streaming=True,
         temperature=0.4,
         max_tokens=1024  # Máximo de tokens de salida en las respuestas del LLM
@@ -85,14 +85,14 @@ def stream_rag_response(messages: List[dict]):
         # Configuración del recuperador
         retriever = vector_store.as_retriever(
             search_type="similarity_score_threshold",
-            search_kwargs={"k": 4, "score_threshold": 0.6},
+            search_kwargs={"k": 6, "score_threshold": 0.5},
         )
 
         # Recuperar contexto desde Pinecone
         docs = retriever.invoke(question)
         context_items = [
-            #Página: '1': 'Contenido' \ Documento: 'Guía Didáctica'
-            f"Página {int(doc.metadata.get('page'))}: {doc.page_content} | Documento: {doc.metadata.get('doc_name', 'desconocido')}"
+            #'Documento: 'Guía Didáctica' en la Página 45: '
+            f"Documento: {doc.metadata.get('doc_name', 'desconocido')} en la Página: {int(doc.metadata.get('page'))}: {doc.page_content}: "
             for doc in docs   
         ]
         #Formatear como una sola cadena de texto
