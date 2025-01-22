@@ -47,25 +47,33 @@ app.add_middleware(
     allow_headers=["*"],
 )   
 
-# Modelo de Embeddings
-embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+try:
+    # Modelo de Embeddings
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+except Exception as e:
+    raise RuntimeError(f"Error al inicializar los embeddings: {str(e)}")
 
-# Conexión a Pinecone
-pc = Pinecone(api_key=PINECONE_API_KEY)
-index_name = "tutormad" #se está usando un solo index pero con múltiples namespaces
-index = pc.Index(index_name) 
-namespace = "curso_introduccion_MAD" #Importante direecionar correctamente el namespace
-vector_store = PineconeVectorStore(index=index, embedding=embeddings, namespace=namespace)
+try:
+    # Conexión a Pinecone
+    pc = Pinecone(api_key=PINECONE_API_KEY)
+    index_name = "tutormad"  # se está usando un solo índice pero con múltiples namespaces
+    index = pc.Index(index_name)
+    namespace = "curso_introduccion_MAD"  # Importante direccionar correctamente el namespace
+    vector_store = PineconeVectorStore(index=index, embedding=embeddings, namespace=namespace)
+except Exception as e:
+    raise RuntimeError(f"Error al conectar con Pinecone o inicializar el vector store: {str(e)}")
 
-# Configurar el modelo de Gemini usando Langchain
-llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash", #Modelo especializado en resúmenes
-    google_api_key=GOOGLE_API_KEY,
-    streaming=True,
-    temperature=0.4,
-    max_tokens=1024 #Maximo de tokens de salida en las respuestas del llm
-)
-
+try:
+    # Configurar el modelo de Gemini usando Langchain
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-1.5-flash",  # Modelo especializado en resúmenes
+        google_api_key=GOOGLE_API_KEY,
+        streaming=True,
+        temperature=0.4,
+        max_tokens=1024  # Máximo de tokens de salida en las respuestas del LLM
+    )
+except Exception as e:
+    raise RuntimeError(f"Error al inicializar el modelo LLM: {str(e)}")
 
 def stream_rag_response(messages: List[dict]):
     try:
