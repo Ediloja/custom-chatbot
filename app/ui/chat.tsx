@@ -21,12 +21,32 @@ export default function Chat({ content, role }: Message) {
                 )}
                 options={{
                     overrides: {
-                        ol: ({ children }) => (
-                            <ol className="list-decimal">{children}</ol>
-                        ),
-                        ul: ({ children }) => (
-                            <ol className="list-disc">{children}</ol>
-                        ),
+                        a: {
+                            component: ({ href, children }) => (
+                                <a
+                                    href={href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-500 underline hover:text-blue-700"
+                                >
+                                    {children}
+                                </a>
+                            ),
+                        },
+
+                        ol: {
+                            component: ({ children }) => (
+                                <ol className="list-decimal pl-5">
+                                    {children}
+                                </ol>
+                            ),
+                        },
+
+                        ul: {
+                            component: ({ children }) => (
+                                <ul className="list-disc pl-5">{children}</ul>
+                            ),
+                        },
                     },
                 }}
             >

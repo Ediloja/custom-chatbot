@@ -44,7 +44,7 @@ export default function Form({
                 onChange={onChange}
                 disabled={isLoading}
             />
-            {isLoading && error && (
+            {isLoading === false && error === undefined && (
                 <Button type="submit">
                     <IconArrowBack stroke={1.5} color="black" />
                 </Button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect } from "react";
 import { useChat, Message } from "ai/react";
 import cx from "@/app/lib/cx";
 import Chat from "@/app/ui/chat";
@@ -13,7 +13,6 @@ import { INITIAL_QUESTIONS } from "@/app/lib/questions";
 export default function Page() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
-    const [streaming, setStreaming] = useState<boolean>(false);
 
     const {
         messages,
@@ -39,14 +38,8 @@ Bienvenido a tu compañero ideal para conquistar tus metas académicas.`,
             },
         ],
 
-        onResponse: () => {
-            setStreaming(false);
-        },
-
         onError: (error) => console.log(`An error occurred ${error}`),
     });
-
-    console.log(messages);
 
     function handleClickInitialQuestion(value: string) {
         setInput(value);
@@ -66,21 +59,16 @@ Bienvenido a tu compañero ideal para conquistar tus metas académicas.`,
         }
     }, [messages]);
 
-    const onSubmit = useCallback(
-        (e: React.FormEvent<HTMLFormElement>) => {
-            e.preventDefault();
-            handleSubmit(e);
-            setStreaming(true);
-        },
-        [handleSubmit],
-    );
-
     return (
         <main className="relative mx-auto flex min-h-svh max-w-screen-md overflow-y-auto p-4 !pb-32 md:p-6 md:!pb-40">
             <div className="w-full">
                 {messages.map((message: Message) => {
                     return <Chat key={message.id} {...message} />;
                 })}
+
+                {isLoading && <Loading />}
+
+                {error && <Error />}
 
                 {messages.length === 1 && (
                     <div className="mt-4 grid gap-2 md:mt-6 md:grid-cols-2 md:gap-4">
@@ -103,10 +91,6 @@ Bienvenido a tu compañero ideal para conquistar tus metas académicas.`,
                     </div>
                 )}
 
-                {streaming && <Loading />}
-
-                {error && <Error />}
-
                 <div ref={messagesEndRef}></div>
 
                 <div
@@ -118,7 +102,7 @@ Bienvenido a tu compañero ideal para conquistar tus metas académicas.`,
                         <Form
                             ref={formRef}
                             input={input}
-                            onSubmit={onSubmit}
+                            onSubmit={handleSubmit}
                             onChange={handleInputChange}
                             isLoading={isLoading}
                             stop={stop}
