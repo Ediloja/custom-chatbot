@@ -53,7 +53,7 @@ export default function Form({
 
             {isLoading && (
                 <Button type="button" onClick={stop}>
-                    <IconPlayerStop stroke={1.5} color="black" />
+                    <IconPlayerStop stroke={1.5} color="black" fill="black" />
                 </Button>
             )}
 
