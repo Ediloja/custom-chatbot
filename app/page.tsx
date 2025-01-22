@@ -25,7 +25,6 @@ export default function Page() {
         error,
         reload,
     } = useChat({
-        // api: "http://127.0.0.1:8000/api/chat",
         maxSteps: 4,
         streamProtocol: "data",
         initialMessages: [

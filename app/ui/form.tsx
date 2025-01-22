@@ -58,7 +58,7 @@ export default function Form({
             )}
 
             {error && (
-                <Button type="submit">
+                <Button type="submit" onClick={reload}>
                     <IconRefresh stroke={1.5} color="black" />
                 </Button>
             )}
