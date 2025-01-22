@@ -1,16 +1,17 @@
+import { ChangeEvent, FormEvent, RefObject } from "react";
 import cx from "@/app/lib/cx";
 import { IconArrowBack } from "@tabler/icons-react";
 import { IconPlayerStop } from "@tabler/icons-react";
 import { IconRefresh } from "@tabler/icons-react";
 
 interface FormProps {
-    ref: any;
+    ref: RefObject<HTMLFormElement | null>;
     input: string;
-    onChange: (event: any) => void;
-    onSubmit: (event: any) => void;
+    onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+    onSubmit: (event: FormEvent<HTMLFormElement>) => void;
     isLoading: boolean;
     stop: () => void;
-    error: any;
+    error: Error | undefined;
     reload: () => void;
 }
 
