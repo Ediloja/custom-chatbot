@@ -16,7 +16,7 @@ export default function Chat({ content, role }: Message) {
             <Avatar isUser={isUser} />
             <Markdown
                 className={cx(
-                    "space-y-4 py-2 leading-normal",
+                    "space-y-4 py-2 leading-7",
                     isUser ? "font-semibold" : "",
                 )}
                 options={{
