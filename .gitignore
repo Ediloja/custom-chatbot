@@ -9,6 +9,7 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+pnpm-lock*
 
 # testing
 /coverage
@@ -16,6 +17,11 @@
 # next.js
 /.next/
 /out/
+
+# python
+venv/
+.env
+__pycache__
 
 # production
 /build
@@ -33,9 +39,15 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# local env files
+.env*.local
+
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# python
+*.venv
