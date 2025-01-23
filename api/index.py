@@ -22,7 +22,7 @@ from pinecone import Pinecone
 # Cargar variables de entorno
 load_dotenv(".env") 
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
-GOOGLE_GENERATIVE_AI_API_KEY = os.environ.get("GOOGLE_API_KEY")
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 
 #Modelo de Respuestas
 class Request(BaseModel):
@@ -68,7 +68,7 @@ try:
     # Configurar el modelo de Gemini usando Langchain
     llm = ChatGoogleGenerativeAI(
         model="gemini-1.5-flash",  # Modelo especializado en resúmenes
-        google_api_key=GOOGLE_GENERATIVE_AI_API_KEY,
+        google_api_key=GOOGLE_API_KEY,
         streaming=True,
         temperature=0.4,
         max_tokens=1024  # Máximo de tokens de salida en las respuestas del LLM
@@ -85,7 +85,7 @@ def stream_rag_response(messages: List[dict]):
         # Configuración del recuperador
         retriever = vector_store.as_retriever(
             search_type="similarity_score_threshold",
-            search_kwargs={"k": 6, "score_threshold": 0.5},
+            search_kwargs={"k": 5, "score_threshold": 0.6},
         )
 
         # Recuperar contexto desde Pinecone
@@ -97,7 +97,6 @@ def stream_rag_response(messages: List[dict]):
         ]
         #Formatear como una sola cadena de texto
         context = "\n".join(context_items)
-
         # Construir el mensaje con contexto y pregunta
         input_data = {"context": context, "question": question}
 
