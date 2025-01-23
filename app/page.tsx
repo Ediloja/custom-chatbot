@@ -25,6 +25,7 @@ export default function Page() {
         error,
         reload,
     } = useChat({
+        api: "https://demo-deploy-mu-liard.vercel.app/",
         maxSteps: 4,
         streamProtocol: "data",
         initialMessages: [
