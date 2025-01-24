@@ -35,9 +35,6 @@ app = FastAPI(
 )
 
 # CORS
-origins = [
-    "http://localhost:3000",
-]
 
 app.add_middleware(
     CORSMiddleware,
