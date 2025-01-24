@@ -21,8 +21,8 @@ from pinecone import Pinecone
 
 # Cargar variables de entorno
 load_dotenv(".env") 
-PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
 
 #Modelo de Respuestas
 class Request(BaseModel):
@@ -33,12 +33,6 @@ app = FastAPI(
     description="API para chatbot con RAG usando Gemini y Pinecone",
     version="1.0.0"
 )
-
-# CORS
-origins = [
-    "http://localhost",
-    "http://localhost:3000",
-]
 
 app.add_middleware(
     CORSMiddleware,
