@@ -25,7 +25,7 @@ export default function Page() {
         error,
         reload,
     } = useChat({
-        api: "https://demo-deploy-mu-liard.vercel.app/api/chat",
+        api: "https://custom-chatbot-crlb33hvr-custom-chatbot.vercel.app/?vercelToolbarCode=HgjMuOoWaKKyZRo#/api/chat",
         maxSteps: 4,
         streamProtocol: "data",
         initialMessages: [
