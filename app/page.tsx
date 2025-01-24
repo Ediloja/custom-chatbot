@@ -1,101 +1,118 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+import { useRef, useEffect } from "react";
+import { useChat, Message } from "ai/react";
+import cx from "@/app/lib/cx";
+import Chat from "@/app/ui/chat";
+import Form from "@/app/ui/form";
+import Loading from "@/app/ui/loading";
+import Error from "@/app/ui/error";
+import Footer from "@/app/ui/footer";
+import { INITIAL_QUESTIONS } from "@/app/lib/questions";
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+export default function Page() {
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const formRef = useRef<HTMLFormElement>(null);
+
+    const {
+        messages,
+        input,
+        handleInputChange,
+        handleSubmit,
+        setInput,
+        isLoading,
+        stop,
+        error,
+        reload,
+    } = useChat({
+        api: "https://demo-deploy-mu-liard.vercel.app/api/chat",
+        maxSteps: 4,
+        streamProtocol: "data",
+        initialMessages: [
+            {
+                id: "0",
+                role: "system",
+                content: `**¡Hola, Jaguar UTPL!**
+
+Bienvenido a tu compañero ideal para conquistar tus metas académicas.`,
+            },
+        ],
+
+        onError: (error) => console.log(`An error occurred ${error}`),
+    });
+
+    function handleClickInitialQuestion(value: string) {
+        setInput(value);
+        setTimeout(() => {
+            formRef.current?.dispatchEvent(
+                new Event("submit", {
+                    cancelable: true,
+                    bubbles: true,
+                }),
+            );
+        }, 1);
+    }
+
+    useEffect(() => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView();
+        }
+    }, [messages]);
+
+    return (
+        <main className="relative mx-auto flex min-h-svh max-w-screen-md overflow-y-auto p-4 !pb-32 md:p-6 md:!pb-40">
+            <div className="w-full">
+                {messages.map((message: Message) => {
+                    return <Chat key={message.id} {...message} />;
+                })}
+
+                {isLoading && <Loading />}
+
+                {error && <Error />}
+
+                {messages.length === 1 && (
+                    <div className="mt-4 grid gap-2 md:mt-6 md:grid-cols-2 md:gap-4">
+                        {INITIAL_QUESTIONS.map((message) => {
+                            return (
+                                <button
+                                    key={message.content}
+                                    type="button"
+                                    className="cursor-pointer select-none rounded-xl border border-gray-200 bg-white p-3 text-left font-normal text-black hover:border-zinc-400 hover:bg-zinc-50 md:px-4 md:py-3"
+                                    onClick={() =>
+                                        handleClickInitialQuestion(
+                                            message.content,
+                                        )
+                                    }
+                                >
+                                    {message.content}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+
+                <div ref={messagesEndRef}></div>
+
+                <div
+                    className={cx(
+                        "fixed inset-x-0 bottom-0 z-10 flex items-center justify-center bg-white",
+                    )}
+                >
+                    <div className="w-full max-w-screen-md rounded-xl px-4 py-6 md:px-5">
+                        <Form
+                            ref={formRef}
+                            input={input}
+                            onSubmit={handleSubmit}
+                            onChange={handleInputChange}
+                            isLoading={isLoading}
+                            stop={stop}
+                            error={error}
+                            reload={reload}
+                        />
+                        <Footer />
+                    </div>
+                </div>
+            </div>
+        </main>
+    );
 }
