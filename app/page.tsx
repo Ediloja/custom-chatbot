@@ -32,7 +32,7 @@ export default function Page() {
             {
                 id: "0",
                 role: "system",
-                content: `**¡Hola, soy SophiaUTPL!**
+                content: `**¡Hola! Soy SophiaUTPL**
 
 Tu asistente virtual para conquistar tus metas académicas.`,
             },

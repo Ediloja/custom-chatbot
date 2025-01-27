@@ -27,7 +27,7 @@ export default function Chat({ content, role }: Message) {
                                     href={href}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="rounded bg-white px-2 text-blue-500 no-underline hover:text-blue-800"
+                                    className="px-2 text-blue-300 no-underline hover:text-white"
                                 >
                                     {children}
                                 </a>
