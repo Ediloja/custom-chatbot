@@ -81,7 +81,7 @@ def stream_rag_response(messages: List[dict]):
         # Configuración del recuperador
         retriever = vector_store.as_retriever(
             search_type="similarity_score_threshold",
-            search_kwargs={"k": 5, "score_threshold": 0.6},
+            search_kwargs={"k": 6, "score_threshold": 0.6}, #cantidad de documentos a devolver de la base de datos
         )
 
         # Recuperar contexto desde Pinecone
