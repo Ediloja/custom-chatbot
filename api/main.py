@@ -15,7 +15,6 @@ from fastapi.middleware.cors import CORSMiddleware
 # LangChain
 from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone
@@ -47,7 +46,7 @@ app.add_middleware(
 ###
 try:
     # Modelo de Embeddings
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 except Exception as e:
     raise RuntimeError(f"Error al inicializar los embeddings: {str(e)}")
 
@@ -55,10 +54,10 @@ except Exception as e:
 try:
     # Conexión a Pinecone
     pc = Pinecone(api_key=PINECONE_API_KEY)
-    index_name = "tutormad"  # Se está usando un solo índice pero con múltiples namespaces
+    index_name = "tutorsmall"  # Se está usando un solo índice pero con múltiples namespaces
     index = pc.Index(index_name)
-    namespace = "curso_introduccion_MAD"  # Importante direccionar correctamente el namespace
-    vector_store = PineconeVectorStore(index=index, embedding=embeddings, namespace=namespace)
+    #namespace = "curso_introduccion_MAD"  # Importante direccionar correctamente el namespace
+    vector_store = PineconeVectorStore(index=index, embedding=embeddings)
 except Exception as e:
     raise RuntimeError(f"Error al conectar con Pinecone o inicializar el vector store: {str(e)}")
 
@@ -68,7 +67,8 @@ try:
         model_name="gpt-4o-mini",  # Modelo equivalente a Gemini 1.5 Flash
         api_key=OPENAI_API_KEY,
         streaming=True,
-        temperature=0.5  # Máximo de tokens de salida en las respuestas del LLM
+        temperature=0.4,
+        max_tokens=512  # Máximo de tokens de salida en las respuestas del LLM
     )
 except Exception as e:
     raise RuntimeError(f"Error al inicializar el modelo LLM: {str(e)}")
@@ -82,7 +82,7 @@ def stream_rag_response(messages: List[dict]):
         # Configuración del recuperador
         retriever = vector_store.as_retriever(
             search_type="similarity_score_threshold",
-            search_kwargs={"k": 6, "score_threshold": 0.8}, # Cantidad de documentos a devolver de la base de datos
+            search_kwargs={"k": 6, "score_threshold": 0.6}, # Cantidad de documentos a devolver de la base de datos
         )
 
         # Recuperar contexto desde Pinecone
