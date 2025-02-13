@@ -32,9 +32,9 @@ export default function Page() {
             {
                 id: "0",
                 role: "system",
-                content: `**¡Hola, Jaguar UTPL!**
+                content: `**¡Hola! Soy SophiaUTPL**
 
-Bienvenido a tu compañero ideal para conquistar tus metas académicas.`,
+Tu asistente virtual para conquistar tus metas académicas.`,
             },
         ],
 
