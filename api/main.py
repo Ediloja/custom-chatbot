@@ -14,18 +14,18 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from openai import OpenAI
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
-# Cargar variables de entorno
+
+# Environment variables
 load_dotenv(".env") 
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
-# Modelo de Respuestas
 class Request(BaseModel):
     messages: List[dict]
 
 app = FastAPI(
     title="RAG API",
-    description="API para chatbot con RAG usando OpenAI y Pinecone",
+    description="API para chatbot con RAG utilizando OpenAI y Pinecone",
     version="1.0.3"
 )
 
@@ -80,11 +80,10 @@ async def handle_chat_data(request: Request, protocol: str = Query('data')):
         response.headers["x-vercel-ai-data-stream"] = "v1"
         return response
     except Exception as e:
-        # Manejo genérico de errores
         return JSONResponse(
             status_code=500,
             content={
-                "error": "Ocurrió un error inesperado durante el procesamiento.",
+                "error": "An error occurred during processing the request. Please check the API and try again.",
                 "detail": str(e)
             }
         )
