@@ -1,10 +1,8 @@
 import os
+import json
 from dotenv import load_dotenv
 from typing import List
-import json
-
-# De utils
-from .utils.prompt import prompt_template
+from pinecone import Pinecone
 
 # FastAPI
 from pydantic import BaseModel
@@ -14,6 +12,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from openai import OpenAI
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
+
+# RAG
+from langchain_community.document_loaders import PyMuPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
+from langchain.storage import InMemoryStore
+from langchain.retrievers import ParentDocumentRetriever
+from langchain_pinecone import PineconeVectorStore
 
 # Environment variables
 load_dotenv(".env") 
@@ -40,13 +46,95 @@ app.add_middleware(
 
 client = OpenAI()
 
-def stream_data(messages: List[ChatCompletionMessageParam], protocol: str = 'data'):
+# Pinecone
+try:
+    pc = Pinecone(api_key=PINECONE_API_KEY)
+    index_name = "chatbot"
+    index = pc.Index(index_name)
+    namespace = "testing-chatbot-1"
+
+except Exception as error:
+    print("Error al conectar con Pinecone:", error)
+
+# Embeddings
+try:
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+except Exception as e:
+    print("Error al crear el modelo de embeddings:", e)
+
+# Vectorstore
+vectorstore = PineconeVectorStore(embedding=embeddings, index=index, namespace=namespace)
+store = InMemoryStore()
+
+parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
+child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
+
+# Loading documents
+try:
+    document_paths = [
+    "./assets/calendario-academico-mad-abril-agosto-2025.pdf",
+    "./assets/introduccion-mad.pdf",
+    "./assets/preguntas-frecuentes-mad.pdf",
+    "./assets/preguntas-frecuentes-eva.pdf"
+    ]
+    
+    documents = []
+
+    for path in document_paths:
+        loader = PyMuPDFLoader(path)
+        documents.extend(loader.load())
+
+    print("Documents uploaded successfully!")
+except Exception as error:
+    print("Error al cargar los documentos:", error)
+
+# ParentDocumentRetriever
+retriever = ParentDocumentRetriever(
+    vectorstore=vectorstore,
+    docstore=store,
+    child_splitter=child_splitter,
+    parent_splitter=parent_splitter,
+)
+
+retriever.add_documents(documents)
+
+def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: str = 'data'):
+
+    # Extraer la última pregunta enviada por el usuario
+    question = ""
+
+    for message in reversed(messages):
+        if message.get("role") in ["user", "human", "assistant"]:
+            question = message.get("content", "")
+            break
+    if not question:
+        question = " "
+
+    # Recuperar documentos relevantes para la pregunta utilizando el retriever.
+    docs = retriever.invoke(question)
+    docs_text = "".join([doc.page_content for doc in docs])
+
+    # Prompt para el chatbot
+    system_prompt = (
+        "You are an assistant for question-answering tasks. "
+        "Use the following pieces of retrieved context to answer the question. "
+        "If you don't know the answer, just say that you don't know. "
+        "Use three sentences maximum and keep the answer concise. "
+        "Context: {context}"
+    )
+
+    system_prompt_formatted = system_prompt.format(context=docs_text)
+
+    # Preparar mensajes para la API de OpenAI
+    new_messages = [
+        {"role": "system", "content": system_prompt_formatted},
+        {"role": "user", "content": question}
+    ]
 
     if (protocol == 'data'):
-
         stream_result = client.chat.completions.create(
             model="gpt-4o-mini", 
-            messages=messages,
+            messages=new_messages,
             stream=True
         )
 
@@ -76,7 +164,7 @@ def stream_data(messages: List[ChatCompletionMessageParam], protocol: str = 'dat
 async def handle_chat_data(request: Request, protocol: str = Query('data')):
     try:
         messages = request.messages
-        response = StreamingResponse(stream_data(messages, protocol))
+        response = StreamingResponse(stream_data_with_rag(messages, protocol))
         response.headers["x-vercel-ai-data-stream"] = "v1"
         return response
     except Exception as e:
