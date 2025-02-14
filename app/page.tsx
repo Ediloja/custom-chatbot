@@ -25,7 +25,7 @@ export default function Page() {
         error,
         reload,
     } = useChat({
-        api: "https://custom-chatbot-back-end.vercel.app/api/chat",
+        api: "https://custom-chatbot-production.up.railway.app/api/chat",
         maxSteps: 4,
         streamProtocol: "data",
         initialMessages: [
@@ -58,6 +58,8 @@ Tu asistente virtual para conquistar tus metas académicas.`,
             messagesEndRef.current.scrollIntoView();
         }
     }, [messages]);
+
+    console.log(messages);
 
     return (
         <main className="relative mx-auto flex min-h-svh max-w-screen-md overflow-y-auto p-4 !pb-32 md:p-6 md:!pb-40">
