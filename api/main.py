@@ -68,6 +68,11 @@ except Exception as e:
 vectorstore = PineconeVectorStore(embedding=embeddings, index=index, namespace=namespace)
 store = InMemoryStore()
 
+# Revisar InMemoryStore
+print(store)
+print(store.yield_keys)
+print(store.yield_keys())
+
 parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
 child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
 
