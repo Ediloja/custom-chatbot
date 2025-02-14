@@ -25,7 +25,7 @@ export default function Page() {
         error,
         reload,
     } = useChat({
-        api: "http://127.0.0.1:8000/api/chat",
+        api: "https://custom-chatbot-production.up.railway.app/api/chat",
         maxSteps: 4,
         streamProtocol: "data",
         initialMessages: [
