@@ -44,7 +44,6 @@ app.add_middleware(
     allow_headers=["*"],
 )   
 
-
 # OpenAI
 client = OpenAI()
 
@@ -54,7 +53,7 @@ try:
     index_name = "chatbot"
     index = pc.Index(index_name)
     namespace = "testing-chatbot-1"
-
+    print("Index created successfully!")
 except Exception as error:
     print("Error al conectar con Pinecone:", error)
 
@@ -64,52 +63,50 @@ try:
 except Exception as e:
     print("Error al crear el modelo de embeddings:", e)
 
-# Vectorstore
+# Vectorstore y Docstore
 vectorstore = PineconeVectorStore(embedding=embeddings, index=index, namespace=namespace)
 store = InMemoryStore()
 
-# Revisar InMemoryStore
-print(store)
-print(store.yield_keys)
-print(store.yield_keys())
-
+# Splitters para documentos "padre" e "hijo"
 parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
 child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
 
-# Loading documents
-try:
-    loaders = [
-        PyMuPDFLoader("api/assets/introduccion-mad.pdf"),
-        PyMuPDFLoader("api/assets/calendario-academico-mad-abril-agosto-2025.pdf"),
-        PyMuPDFLoader("api/assets/preguntas-frecuentes-mad.pdf"),
-        PyMuPDFLoader("api/assets/preguntas-frecuentes-eva.pdf")
-        ]
-
-    documents = []
-
-    for loader in loaders:
-        documents.extend(loader.load())
-
-    print("Documents uploaded successfully!")
-except Exception as error:
-    print("Error al cargar los documentos:", error)
-
-# ParentDocumentRetriever
+# Definir el ParentDocumentRetriever antes de usarlo en la indexación
 retriever = ParentDocumentRetriever(
     vectorstore=vectorstore,
     docstore=store,
     child_splitter=child_splitter,
     parent_splitter=parent_splitter,
-    )
+)
 
-retriever.add_documents(documents)
+# Carga e indexación de documentos (se elimina el contenido actual y se reindexan)
+try:
+    # Eliminar todos los vectores existentes en el namespace especificado
+    index.delete(delete_all=True, namespace=namespace)
+    print(f"Existing vectors in namespace '{namespace}' have been deleted.")
+
+    loaders = [
+        PyMuPDFLoader("api/assets/introduccion-mad.pdf"),
+        PyMuPDFLoader("api/assets/calendario-academico-mad-abril-agosto-2025.pdf"),
+        PyMuPDFLoader("api/assets/preguntas-frecuentes-mad.pdf"),
+        PyMuPDFLoader("api/assets/preguntas-frecuentes-eva.pdf")
+    ]
+
+    documents = []
+    for loader in loaders:
+        documents.extend(loader.load())
+
+    print("Documents uploaded successfully!")
+    
+    # Aquí se utiliza el retriever ya definido
+    retriever.add_documents(documents)
+except Exception as error:
+    print("Error during re-indexing of documents:", error)
 
 
 def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: str = 'data'):
-
     # Extraer la última pregunta enviada por el usuario
     question = ""
-
     for message in reversed(messages):
         if message.get("role") in ["user", "human", "assistant"]:
             question = message.get("content", "")
@@ -129,7 +126,6 @@ def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: s
         "Use three sentences maximum and keep the answer concise. "
         "Context: {context}"
     )
-
     system_prompt_formatted = system_prompt.format(context=docs_text)
 
     # Preparar mensajes para la API de OpenAI
@@ -138,7 +134,7 @@ def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: s
         {"role": "user", "content": question}
     ]
 
-    if (protocol == 'data'):
+    if protocol == 'data':
         stream_result = client.chat.completions.create(
             model="gpt-4o-mini", 
             messages=new_messages,
@@ -154,8 +150,8 @@ def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: s
             # Si el chunk no contiene choices, se envía un mensaje de finalización
             if chunk.choices == []:
                 usage = chunk.usage
-                prompt_tokens=usage.prompt_tokens,
-                completion_tokens=usage.completion_tokens
+                prompt_tokens = usage.prompt_tokens
+                completion_tokens = usage.completion_tokens
                 yield 'e:{{"finishReason":"{reason}","usage":{{"promptTokens":{prompt},"completionTokens":{completion}}},"isContinued":false}}\n'.format(
                     reason="stop",
                     prompt=prompt_tokens,
@@ -186,4 +182,3 @@ async def handle_chat_data(request: Request, protocol: str = Query('data')):
 @app.get("/")
 async def root():
     return {"message": "Hello from FastAPI!"}
-    
