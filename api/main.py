@@ -44,6 +44,8 @@ app.add_middleware(
     allow_headers=["*"],
 )   
 
+
+# OpenAI
 client = OpenAI()
 
 # Pinecone
@@ -71,17 +73,16 @@ child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
 
 # Loading documents
 try:
-    document_paths = [
-    "./assets/calendario-academico-mad-abril-agosto-2025.pdf",
-    "./assets/introduccion-mad.pdf",
-    "./assets/preguntas-frecuentes-mad.pdf",
-    "./assets/preguntas-frecuentes-eva.pdf"
-    ]
-    
+    loaders = [
+        PyMuPDFLoader("api/assets/introduccion-mad.pdf"),
+        PyMuPDFLoader("api/assets/calendario-academico-mad-abril-agosto-2025.pdf"),
+        PyMuPDFLoader("api/assets/preguntas-frecuentes-mad.pdf"),
+        PyMuPDFLoader("api/assets/preguntas-frecuentes-eva.pdf")
+        ]
+
     documents = []
 
-    for path in document_paths:
-        loader = PyMuPDFLoader(path)
+    for loader in loaders:
         documents.extend(loader.load())
 
     print("Documents uploaded successfully!")
@@ -94,9 +95,10 @@ retriever = ParentDocumentRetriever(
     docstore=store,
     child_splitter=child_splitter,
     parent_splitter=parent_splitter,
-)
+    )
 
 retriever.add_documents(documents)
+
 
 def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: str = 'data'):
 
@@ -179,3 +181,4 @@ async def handle_chat_data(request: Request, protocol: str = Query('data')):
 @app.get("/")
 async def root():
     return {"message": "Hello from FastAPI!"}
+    
