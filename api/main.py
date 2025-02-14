@@ -52,7 +52,7 @@ try:
     pc = Pinecone(api_key=PINECONE_API_KEY)
     index_name = "chatbot"
     index = pc.Index(index_name)
-    namespace = "testing-chatbot-1"
+    namespace = "testing-chatbot-local"
     print("Index created successfully!")
 except Exception as error:
     print("Error al conectar con Pinecone:", error)
@@ -81,24 +81,33 @@ retriever = ParentDocumentRetriever(
 
 # Carga e indexación de documentos (se elimina el contenido actual y se reindexan)
 try:
-    # Eliminar todos los vectores existentes en el namespace especificado
-    index.delete(delete_all=True, namespace=namespace)
-    print(f"Existing vectors in namespace '{namespace}' have been deleted.")
+    # Intentar eliminar todos los vectores en el namespace
+    try:
+        index.delete(delete_all=True, namespace=namespace)
+        print(f"Existing vectors in namespace '{namespace}' have been deleted.")
+    except Exception as e:
+        if "Namespace not found" in str(e):
+            print(f"Namespace '{namespace}' not found, skipping deletion.")
+        else:
+            raise e
 
     loaders = [
-        PyMuPDFLoader("api/assets/introduccion-mad.pdf"),
         PyMuPDFLoader("api/assets/calendario-academico-mad-abril-agosto-2025.pdf"),
+        PyMuPDFLoader("api/assets/contenido-metacurso.pdf"),
+        PyMuPDFLoader("api/assets/plan-docente-mad.pdf"),
+        PyMuPDFLoader("api/assets/guia-estudiante-mad-2025.pdf"),
         PyMuPDFLoader("api/assets/preguntas-frecuentes-mad.pdf"),
-        PyMuPDFLoader("api/assets/preguntas-frecuentes-eva.pdf")
+        PyMuPDFLoader("api/assets/preguntas-frecuentes-eva.pdf"),
     ]
 
     documents = []
+
     for loader in loaders:
         documents.extend(loader.load())
 
     print("Documents uploaded successfully!")
     
-    # Aquí se utiliza el retriever ya definido
+    # Agregar los documentos al retriever para reindexar
     retriever.add_documents(documents)
 except Exception as error:
     print("Error during re-indexing of documents:", error)
