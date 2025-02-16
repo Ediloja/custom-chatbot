@@ -95,7 +95,6 @@ try:
         PyMuPDFLoader("api/assets/calendario-academico-mad-abril-agosto-2025.pdf"),
         PyMuPDFLoader("api/assets/contenido-metacurso.pdf"),
         PyMuPDFLoader("api/assets/plan-docente-mad.pdf"),
-        PyMuPDFLoader("api/assets/guia-estudiante-mad-2025.pdf"),
         PyMuPDFLoader("api/assets/preguntas-frecuentes-mad.pdf"),
         PyMuPDFLoader("api/assets/preguntas-frecuentes-eva.pdf"),
     ]
