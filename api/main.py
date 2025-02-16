@@ -21,6 +21,10 @@ from langchain.storage import InMemoryStore
 from langchain.retrievers import ParentDocumentRetriever
 from langchain_pinecone import PineconeVectorStore
 
+# Current date with timezone (using zoneinfo, available in Python 3.9+)
+from zoneinfo import ZoneInfo
+import datetime
+
 # Environment variables
 load_dotenv(".env") 
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
@@ -31,11 +35,11 @@ class Request(BaseModel):
 
 app = FastAPI(
     title="RAG API",
-    description="API para chatbot con RAG utilizando OpenAI y Pinecone",
+    description="API for chatbot using RAG with OpenAI and Pinecone",
     version="1.0.3"
 )
 
-# CORS
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -44,7 +48,7 @@ app.add_middleware(
     allow_headers=["*"],
 )   
 
-# OpenAI
+# OpenAI client
 client = OpenAI()
 
 # Pinecone
@@ -52,26 +56,27 @@ try:
     pc = Pinecone(api_key=PINECONE_API_KEY)
     index_name = "chatbot"
     index = pc.Index(index_name)
-    namespace = "testing-index-local"
+    namespace = "testing-chatbot-local"
     print("Index created successfully!")
-except Exception as e:
-    print("Error connecting to Pinecone:", e)
+except Exception as exc:
+    print("Error connecting to Pinecone:", exc)
 
 # Embeddings
 try:
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-except Exception as e:
-    print("Error creating embeddings model:", e)
+    print("Embeddings model created successfully!")
+except Exception as exc:
+    print("Error creating embeddings model:", exc)
 
-# Vectorstore y Docstore
+# Vectorstore and Docstore
 vectorstore = PineconeVectorStore(embedding=embeddings, index=index, namespace=namespace)
 store = InMemoryStore()
 
-# Splitters para documentos "padre" e "hijo"
+# Splitters for parent and child documents
 parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
 child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
 
-# Definir el ParentDocumentRetriever antes de usarlo en la indexación
+# Create the ParentDocumentRetriever
 retriever = ParentDocumentRetriever(
     vectorstore=vectorstore,
     docstore=store,
@@ -79,17 +84,16 @@ retriever = ParentDocumentRetriever(
     parent_splitter=parent_splitter,
 )
 
-# Carga e indexación de documentos (se elimina el contenido actual y se reindexan)
+# Load and index documents (delete existing vectors and re-index)
 try:
-    # Intentar eliminar todos los vectores en el namespace
     try:
         index.delete(delete_all=True, namespace=namespace)
         print(f"Existing vectors in namespace '{namespace}' have been deleted.")
-    except Exception as e:
-        if "Namespace not found" in str(e):
+    except Exception as exc:
+        if "Namespace not found" in str(exc):
             print(f"Namespace '{namespace}' not found, skipping deletion.")
         else:
-            raise e
+            raise exc
 
     loaders = [
         PyMuPDFLoader("api/assets/calendario-academico-mad-abril-agosto-2025.pdf"),
@@ -100,20 +104,33 @@ try:
     ]
 
     documents = []
-
     for loader in loaders:
         documents.extend(loader.load())
 
     print("Documents uploaded successfully!")
-    
-    # Agregar los documentos al retriever para reindexar
     retriever.add_documents(documents)
-except Exception as e:
-    print("Error during re-indexing of documents:", e)
+except Exception as exc:
+    print("Error during re-indexing of documents:", exc)
 
+
+def truncate_messages(messages: List[dict], max_tokens: int = 1500) -> List[dict]:
+    """
+    Función auxiliar que trunca el historial de mensajes para no exceder un número máximo de tokens.
+    Esta implementación usa una heurística simple: mantiene los mensajes más recientes hasta llegar al límite.
+    Para un conteo más exacto, se puede usar una biblioteca como 'tiktoken'.
+    """
+    # En esta versión simple, conservamos los últimos N mensajes (por ejemplo, los 6 últimos)
+    return messages[-6:]
 
 def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: str = 'data'):
-    # Extraer la última pregunta enviada por el usuario (opcionalmente, para recuperar contexto de documentos)
+    from zoneinfo import ZoneInfo
+    import datetime
+
+    # Obtén la fecha actual con zona horaria y formatea para incluir el día de la semana.
+    # Cambia "Europe/Madrid" a la zona horaria deseada.
+    current_date = datetime.datetime.now(ZoneInfo("America/Guayaquil")).strftime("%A, %Y-%m-%d")
+    
+    # Extraer la última pregunta del usuario para usar en la recuperación de contexto.
     last_query = ""
     for message in reversed(messages):
         if message.get("role") == "user":
@@ -122,24 +139,25 @@ def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: s
     if not last_query:
         last_query = " "
 
-    # Recuperar documentos relevantes para la última consulta utilizando el retriever.
+    # Recupera los documentos relevantes según la última consulta.
     docs = retriever.invoke(last_query)
     docs_text = "".join([doc.page_content for doc in docs])
 
-    # Prompt para el chatbot que incluye el contexto recuperado
+    # Construir el prompt del sistema, inyectando la fecha actual (con día de la semana)
     system_prompt = (
-        "You are an assistant for question-answering tasks. "
-        "Use the following pieces of retrieved context to answer the question. "
-        "If you don't know the answer, just say that you don't know. "
-        "Use three sentences maximum and keep the answer concise. "
+        f"You are an assistant for question-answering tasks. Today is {current_date}. "
+        "Use the following pieces of retrieved context to help answer the question. "
+        "If the context is not sufficient, feel free to use your general knowledge. "
+        "Provide your answer in up to three concise sentences. "
         "Context: {context}"
     )
-
     system_prompt_formatted = system_prompt.format(context=docs_text)
 
-    # Construir la lista de mensajes que se enviará a OpenAI:
-    # Se añade un mensaje del sistema (con el prompt que incluye el contexto) y se concatenan todos los mensajes anteriores.
-    new_messages = [{"role": "developer", "content": system_prompt_formatted}] + messages
+    # Trunca el historial de mensajes para optimizar el número de tokens.
+    truncated_messages = truncate_messages(messages, max_tokens=1500)
+    
+    # Construir la lista de mensajes a enviar a OpenAI:
+    new_messages = [{"role": "system", "content": system_prompt_formatted}] + truncated_messages
 
     if protocol == 'data':
         stream_result = client.chat.completions.create(
@@ -154,7 +172,6 @@ def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: s
                     continue
                 else:
                     yield '0:{text}\n'.format(text=json.dumps(choice.delta.content))
-            # Si el chunk no contiene choices, se envía un mensaje de finalización
             if chunk.choices == []:
                 usage = chunk.usage
                 prompt_tokens = usage.prompt_tokens
@@ -165,10 +182,9 @@ def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: s
                     completion=completion_tokens
                 )
 
-        # Mensaje de cierre del stream
         yield '2:[{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0},"isContinued":false}]\n'
 
-# API
+# API endpoint to handle chat requests
 @app.post("/api/chat", response_class=StreamingResponse)
 async def handle_chat_data(request: Request, protocol: str = Query('data')):
     try:
@@ -176,12 +192,12 @@ async def handle_chat_data(request: Request, protocol: str = Query('data')):
         response = StreamingResponse(stream_data_with_rag(messages, protocol))
         response.headers["x-vercel-ai-data-stream"] = "v1"
         return response
-    except Exception as e:
+    except Exception as exc:
         return JSONResponse(
             status_code=500,
             content={
                 "error": "An error occurred during processing the request. Please check the API and try again.",
-                "detail": str(e)
+                "detail": str(exc)
             }
         )
     
