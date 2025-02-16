@@ -52,7 +52,7 @@ try:
     pc = Pinecone(api_key=PINECONE_API_KEY)
     index_name = "chatbot"
     index = pc.Index(index_name)
-    namespace = "testing-chatbot-local"
+    namespace = "testing-index-local"
     print("Index created successfully!")
 except Exception as error:
     print("Error al conectar con Pinecone:", error)
@@ -113,20 +113,20 @@ except Exception as error:
 
 
 def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: str = 'data'):
-    # Extraer la última pregunta enviada por el usuario
-    question = ""
+    # Extraer la última pregunta enviada por el usuario (opcionalmente, para recuperar contexto de documentos)
+    last_query = ""
     for message in reversed(messages):
-        if message.get("role") in ["user", "human", "assistant"]:
-            question = message.get("content", "")
+        if message.get("role") == "user":
+            last_query = message.get("content", "")
             break
-    if not question:
-        question = " "
+    if not last_query:
+        last_query = " "
 
-    # Recuperar documentos relevantes para la pregunta utilizando el retriever.
-    docs = retriever.invoke(question)
+    # Recuperar documentos relevantes para la última consulta utilizando el retriever.
+    docs = retriever.invoke(last_query)
     docs_text = "".join([doc.page_content for doc in docs])
 
-    # Prompt para el chatbot
+    # Prompt para el chatbot que incluye el contexto recuperado
     system_prompt = (
         "You are an assistant for question-answering tasks. "
         "Use the following pieces of retrieved context to answer the question. "
@@ -134,13 +134,12 @@ def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: s
         "Use three sentences maximum and keep the answer concise. "
         "Context: {context}"
     )
+
     system_prompt_formatted = system_prompt.format(context=docs_text)
 
-    # Preparar mensajes para la API de OpenAI
-    new_messages = [
-        {"role": "system", "content": system_prompt_formatted},
-        {"role": "user", "content": question}
-    ]
+    # Construir la lista de mensajes que se enviará a OpenAI:
+    # Se añade un mensaje del sistema (con el prompt que incluye el contexto) y se concatenan todos los mensajes anteriores.
+    new_messages = [{"role": "system", "content": system_prompt_formatted}] + messages
 
     if protocol == 'data':
         stream_result = client.chat.completions.create(
@@ -168,7 +167,6 @@ def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: s
 
         # Mensaje de cierre del stream
         yield '2:[{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0},"isContinued":false}]\n'
-
 
 # API
 @app.post("/api/chat", response_class=StreamingResponse)
