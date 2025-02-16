@@ -54,14 +54,14 @@ try:
     index = pc.Index(index_name)
     namespace = "testing-index-local"
     print("Index created successfully!")
-except Exception as error:
-    print("Error al conectar con Pinecone:", error)
+except Exception as e:
+    print("Error connecting to Pinecone:", e)
 
 # Embeddings
 try:
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 except Exception as e:
-    print("Error al crear el modelo de embeddings:", e)
+    print("Error creating embeddings model:", e)
 
 # Vectorstore y Docstore
 vectorstore = PineconeVectorStore(embedding=embeddings, index=index, namespace=namespace)
@@ -108,8 +108,8 @@ try:
     
     # Agregar los documentos al retriever para reindexar
     retriever.add_documents(documents)
-except Exception as error:
-    print("Error during re-indexing of documents:", error)
+except Exception as e:
+    print("Error during re-indexing of documents:", e)
 
 
 def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: str = 'data'):
@@ -139,7 +139,7 @@ def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: s
 
     # Construir la lista de mensajes que se enviará a OpenAI:
     # Se añade un mensaje del sistema (con el prompt que incluye el contexto) y se concatenan todos los mensajes anteriores.
-    new_messages = [{"role": "system", "content": system_prompt_formatted}] + messages
+    new_messages = [{"role": "developer", "content": system_prompt_formatted}] + messages
 
     if protocol == 'data':
         stream_result = client.chat.completions.create(
