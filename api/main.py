@@ -14,7 +14,8 @@ from openai import OpenAI
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 
 # RAG
-from langchain_community.document_loaders import PyMuPDFLoader
+from pymupdf4llm import to_markdown
+from langchain.docstore.document import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain.storage import InMemoryStore
@@ -95,20 +96,40 @@ try:
         else:
             raise exc
 
-    loaders = [
-        PyMuPDFLoader("api/assets/calendario-academico-mad-abril-agosto-2025.pdf"),
-        PyMuPDFLoader("api/assets/contenido-metacurso.pdf"),
-        PyMuPDFLoader("api/assets/plan-docente-mad.pdf"),
-        PyMuPDFLoader("api/assets/preguntas-frecuentes-mad.pdf"),
-        PyMuPDFLoader("api/assets/preguntas-frecuentes-eva.pdf"),
-    ]
+    docs_markdown = []
 
-    documents = []
-    for loader in loaders:
-        documents.extend(loader.load())
+    for doc_path in [
+        "api/assets/calendario-academico-mad-abril-agosto-2025.pdf",
+        "api/assets/guia-didactica-mad.pdf",
+        "api/assets/preguntas-frecuentes-mad.pdf",
+        "api/assets/preguntas-frecuentes-eva.pdf",
+        "api/assets/plan-docente-modificado.pdf"
+    ]:
+        markdown_pages = to_markdown(doc=doc_path, page_chunks=True)  # page_chunks -> Extrae por página
+        
+        for page_data in markdown_pages:
+            filtered_metadata = {
+                "source": os.path.basename(doc_path),
+                "page": page_data["metadata"]["page"],
+                "page_count": page_data["metadata"]["page_count"]
+            }
 
-    print("Documents uploaded successfully!")
-    retriever.add_documents(documents)
+            docs_markdown.append({
+                "metadata": filtered_metadata,
+                "text": page_data["text"]
+            })
+
+    docs = [
+            Document(
+                page_content=doc["text"],
+                metadata=doc["metadata"]
+            )
+            for doc in docs_md
+        ]
+
+    # Añadir documentos al Docstore y reindexar
+    retriever.add_documents(docs)
+    print(f"Se han insertado {len(docs)} documentos en el índice '{index_name} y namespace {namespace}' .")
 except Exception as exc:
     print("Error during re-indexing of documents:", exc)
 
@@ -141,13 +162,17 @@ def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: s
     docs_text = "".join([doc.page_content for doc in docs])
 
     # Build the system prompt
-    system_prompt = (
-        f"You are an assistant for question-answering tasks. Today is {current_date}. "
-        "Use the following pieces of retrieved context to help answer the question. "
-        "If the context is not sufficient, feel free to use your general knowledge. "
-        "Provide your answer in up to three concise sentences. "
-        "Context: {context}"
-    )
+    system_prompt = ("""
+        # Instrucciones para el Sistema:
+        Genera respuestas para las preguntas del usuario a partir del contexto proporcionado.
+        FINGE que la información proporcionada en 'CONTEXTO' es de tu conocimiento general para que la interacción sea más agradable
+        EVITA FRASES como 'segun la información', 'según los documentos' 'de acuerdo a la información' etc.
+        Responde con explicaciones claras y detalladas. 
+        Asegúrante de proporcionar los LINKS que vienen dentro del contexto proporcionalo, como recomendación para el usuario y su aprendizaje;
+        Si la pregunta está fuera de contexto no la respondas y menciona que solo posees información del curso de introducción y provee alguna recomendación de donde investigar.
+        A las palabras más importantes de tu respuesta resaltalas con negrita
+        # Contexto: {context}
+    """)
 
     system_prompt_formatted = system_prompt.format(context=docs_text)
 
@@ -161,7 +186,9 @@ def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: s
         stream_result = client.chat.completions.create(
             model="gpt-4o-mini", 
             messages=new_messages,
-            stream=True
+            stream=True,
+            temperature=0.3,
+            max_tokens=512
         )
 
         for chunk in stream_result:
