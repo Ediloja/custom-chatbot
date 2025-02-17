@@ -124,7 +124,7 @@ try:
                 page_content=doc["text"],
                 metadata=doc["metadata"]
             )
-            for doc in docs_md
+            for doc in docs_markdown
         ]
 
     # Añadir documentos al Docstore y reindexar
