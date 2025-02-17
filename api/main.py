@@ -123,27 +123,24 @@ def truncate_messages(messages: List[dict], max_tokens: int = 1500) -> List[dict
     return messages[-6:]
 
 def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: str = 'data'):
-    from zoneinfo import ZoneInfo
-    import datetime
-
-    # Obtén la fecha actual con zona horaria y formatea para incluir el día de la semana.
-    # Cambia "Europe/Madrid" a la zona horaria deseada.
     current_date = datetime.datetime.now(ZoneInfo("America/Guayaquil")).strftime("%A, %Y-%m-%d")
     
-    # Extraer la última pregunta del usuario para usar en la recuperación de contexto.
+    # Extract the last user query for context retrieval
     last_query = ""
+
     for message in reversed(messages):
         if message.get("role") == "user":
             last_query = message.get("content", "")
             break
+            
     if not last_query:
         last_query = " "
 
-    # Recupera los documentos relevantes según la última consulta.
+    # Retrieve documents relevant to the last query
     docs = retriever.invoke(last_query)
     docs_text = "".join([doc.page_content for doc in docs])
 
-    # Construir el prompt del sistema, inyectando la fecha actual (con día de la semana)
+    # Build the system prompt
     system_prompt = (
         f"You are an assistant for question-answering tasks. Today is {current_date}. "
         "Use the following pieces of retrieved context to help answer the question. "
@@ -151,12 +148,13 @@ def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: s
         "Provide your answer in up to three concise sentences. "
         "Context: {context}"
     )
+
     system_prompt_formatted = system_prompt.format(context=docs_text)
 
-    # Trunca el historial de mensajes para optimizar el número de tokens.
+    # Truncate the conversation history to optimize token usage
     truncated_messages = truncate_messages(messages, max_tokens=1500)
     
-    # Construir la lista de mensajes a enviar a OpenAI:
+    # Construct the new messages to send to OpenAI by prepending the system prompt
     new_messages = [{"role": "system", "content": system_prompt_formatted}] + truncated_messages
 
     if protocol == 'data':
