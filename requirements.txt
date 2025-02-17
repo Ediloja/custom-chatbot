@@ -12,6 +12,7 @@ dataclasses-json==0.6.7
 distro==1.9.0
 fastapi==0.115.8
 frozenlist==1.5.0
+greenlet==3.1.1
 h11==0.14.0
 httpcore==1.0.7
 httpx==0.28.1
@@ -24,9 +25,9 @@ jsonpointer==3.0.0
 langchain==0.3.18
 langchain-community==0.3.17
 langchain-core==0.3.35
-langchain-openai==0.3.5
+langchain-openai==0.3.6
 langchain-pinecone==0.2.3
-langchain-tests==0.3.11
+langchain-tests==0.3.12
 langchain-text-splitters==0.3.6
 langsmith==0.3.8
 load-dotenv==0.1.0
@@ -34,7 +35,7 @@ marshmallow==3.26.1
 multidict==6.1.0
 mypy-extensions==1.0.0
 numpy==1.26.4
-openai==1.62.0
+openai==1.63.1
 orjson==3.10.15
 packaging==24.2
 pinecone==5.4.2
@@ -46,6 +47,7 @@ pydantic==2.10.6
 pydantic-settings==2.7.1
 pydantic_core==2.27.2
 PyMuPDF==1.25.3
+pymupdf4llm==0.0.17
 pytest==8.3.4
 pytest-asyncio==0.25.3
 pytest-socket==0.7.0
@@ -61,7 +63,7 @@ SQLAlchemy==2.0.38
 starlette==0.45.3
 syrupy==4.8.1
 tenacity==9.0.0
-tiktoken==0.8.0
+tiktoken==0.9.0
 tqdm==4.67.1
 typing-inspect==0.9.0
 typing_extensions==4.12.2
