@@ -22,15 +22,12 @@ from langchain.storage import InMemoryStore
 from langchain.retrievers import ParentDocumentRetriever
 from langchain_pinecone import PineconeVectorStore
 
-# Current date with timezone (using zoneinfo, available in Python 3.9+)
-from zoneinfo import ZoneInfo
-import datetime
-
 # Environment variables
-load_dotenv(".env") 
+load_dotenv(".env")
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
+# Define request schema for FastAPI
 class Request(BaseModel):
     messages: List[dict]
 
@@ -40,86 +37,102 @@ app = FastAPI(
     version="1.0.3"
 )
 
-# CORS configuration
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-)   
-
-# OpenAI client
-client = OpenAI()
-
-# Pinecone
-try:
-    pc = Pinecone(api_key=PINECONE_API_KEY)
-    index_name = "chatbot"
-    index = pc.Index(index_name)
-    namespace = "testing-chatbot-local"
-    print("Index created successfully!")
-except Exception as exc:
-    print("Error connecting to Pinecone:", exc)
-
-# Embeddings
-try:
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-    print("Embeddings model created successfully!")
-except Exception as exc:
-    print("Error creating embeddings model:", exc)
-
-# Vectorstore and Docstore
-vectorstore = PineconeVectorStore(embedding=embeddings, index=index, namespace=namespace)
-store = InMemoryStore()
-
-# Splitters for parent and child documents
-parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
-child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
-
-# Create the ParentDocumentRetriever
-retriever = ParentDocumentRetriever(
-    vectorstore=vectorstore,
-    docstore=store,
-    child_splitter=child_splitter,
-    parent_splitter=parent_splitter,
 )
 
-# Load and index documents (delete existing vectors and re-index)
-try:
+# OpenAI
+client = OpenAI()
+
+# Global variables for heavy initialization
+pc = None
+index = None
+namespace = None
+embeddings = None
+vectorstore = None
+store = None
+parent_splitter = None
+child_splitter = None
+retriever = None
+
+# Startup event
+@app.on_event("startup")
+async def startup_event():
+    global pc, index, namespace, embeddings, vectorstore, store, parent_splitter, child_splitter, retriever
+    # Initialize Pinecone connection and index
     try:
-        index.delete(delete_all=True, namespace=namespace)
-        print(f"Existing vectors in namespace '{namespace}' have been deleted.")
+        pc = Pinecone(api_key=PINECONE_API_KEY)
+        index_name = "chatbot"
+        index = pc.Index(index_name)
+        namespace = "testing-chatbot-local"
+        print("Index created successfully!")
     except Exception as exc:
-        if "Namespace not found" in str(exc):
-            print(f"Namespace '{namespace}' not found, skipping deletion.")
-        else:
-            raise exc
+        print("Error connecting to Pinecone:", exc)
 
-    docs_markdown = []
+    # Create embeddings model
+    try:
+        embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+        print("Embeddings model created successfully!")
+    except Exception as exc:
+        print("Error creating embeddings model:", exc)
 
-    for doc_path in [
-        "api/assets/calendario-academico-mad-abril-agosto-2025.pdf",
-        "api/assets/guia-didactica-mad.pdf",
-        "api/assets/preguntas-frecuentes-mad.pdf",
-        "api/assets/preguntas-frecuentes-eva.pdf",
-        "api/assets/plan-docente-modificado.pdf"
-    ]:
-        markdown_pages = to_markdown(doc=doc_path, page_chunks=True)  # page_chunks -> Extrae por página
-        
-        for page_data in markdown_pages:
-            filtered_metadata = {
-                "source": os.path.basename(doc_path),
-                "page": page_data["metadata"]["page"],
-                "page_count": page_data["metadata"]["page_count"]
-            }
+    # Initialize vectorstore and in-memory docstore
+    vectorstore = PineconeVectorStore(embedding=embeddings, index=index, namespace=namespace)
+    store = InMemoryStore()
 
-            docs_markdown.append({
-                "metadata": filtered_metadata,
-                "text": page_data["text"]
-            })
+    # Create text splitters for parent and child document chunks
+    parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
+    child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
 
-    docs = [
+    # Create the document retriever
+    retriever = ParentDocumentRetriever(
+        vectorstore=vectorstore,
+        docstore=store,
+        child_splitter=child_splitter,
+        parent_splitter=parent_splitter,
+    )
+
+    # Load and index documents
+    try:
+        # Delete existing vectors in the namespace
+        try:
+            index.delete(delete_all=True, namespace=namespace)
+            print(f"Existing vectors in namespace '{namespace}' have been deleted.")
+        except Exception as exc:
+            if "Namespace not found" in str(exc):
+                print(f"Namespace '{namespace}' not found, skipping deletion.")
+            else:
+                raise exc
+
+        docs_markdown = []
+
+        for doc_path in [
+            "api/assets/calendario-academico-mad-abril-agosto-2025.pdf",
+            "api/assets/guia-didactica-mad.pdf",
+            "api/assets/preguntas-frecuentes-mad.pdf",
+            "api/assets/preguntas-frecuentes-eva.pdf",
+            "api/assets/plan-docente-modificado.pdf"
+        ]:
+            # Convert each PDF into markdown pages (split by page)
+            markdown_pages = to_markdown(doc=doc_path, page_chunks=True)
+            for page_data in markdown_pages:
+                filtered_metadata = {
+                    "source": os.path.basename(doc_path),
+                    "page": page_data["metadata"]["page"],
+                    "page_count": page_data["metadata"]["page_count"]
+                }
+                docs_markdown.append({
+                    "metadata": filtered_metadata,
+                    "text": page_data["text"]
+                })
+
+        # Convert markdown data into LangChain Document objects
+        docs = [
             Document(
                 page_content=doc["text"],
                 metadata=doc["metadata"]
@@ -127,50 +140,47 @@ try:
             for doc in docs_markdown
         ]
 
-    # Añadir documentos al Docstore y reindexar
-    retriever.add_documents(docs)
-    print(f"Se han insertado {len(docs)} documentos en el índice '{index_name} y namespace {namespace}' .")
-except Exception as exc:
-    print("Error during re-indexing of documents:", exc)
+        # Add documents to the retriever
+        retriever.add_documents(docs)
+        print(f"Inserted {len(docs)} documents in index '{index_name}' and namespace '{namespace}'.")
+    except Exception as exc:
+        print("Error during re-indexing of documents:", exc)
 
-
+# Helper function to truncate conversation history to avoid exceeding token limits
 def truncate_messages(messages: List[dict], max_tokens: int = 1500) -> List[dict]:
-    """
-    Función auxiliar que trunca el historial de mensajes para no exceder un número máximo de tokens.
-    Esta implementación usa una heurística simple: mantiene los mensajes más recientes hasta llegar al límite.
-    Para un conteo más exacto, se puede usar una biblioteca como 'tiktoken'.
-    """
-    # En esta versión simple, conservamos los últimos N mensajes (por ejemplo, los 6 últimos)
+    # Simple heuristic: retain the last 6 messages
     return messages[-6:]
 
+# Main function to process chat queries using RAG
 def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: str = 'data'):
-    current_date = datetime.datetime.now(ZoneInfo("America/Guayaquil")).strftime("%A, %Y-%m-%d")
-    
     # Extract the last user query for context retrieval
     last_query = ""
-
     for message in reversed(messages):
         if message.get("role") == "user":
             last_query = message.get("content", "")
             break
-            
     if not last_query:
         last_query = " "
 
-    # Retrieve documents relevant to the last query
+    # Retrieve documents relevant to the user's last query
     docs = retriever.invoke(last_query)
     docs_text = "".join([doc.page_content for doc in docs])
 
-    # Build the system prompt
+    # Build the system prompt to enforce that answers are based primarily on the document context.
     system_prompt = ("""
         # Instrucciones para el Sistema:
-        Genera respuestas para las preguntas del usuario a partir del contexto proporcionado.
+        Genera respuestas para las preguntas del usuario únicamente a partir del contexto proporcionado.
         FINGE que la información proporcionada en 'CONTEXTO' es de tu conocimiento general para que la interacción sea más agradable
         EVITA FRASES como 'segun la información', 'según los documentos' 'de acuerdo a la información' etc.
         Responde con explicaciones claras y detalladas. 
         Asegúrante de proporcionar los LINKS que vienen dentro del contexto proporcionalo, como recomendación para el usuario y su aprendizaje;
-        Si la pregunta está fuera de contexto no la respondas y menciona que solo posees información del curso de introducción y provee alguna recomendación de donde investigar.
+        Si la pregunta está fuera de contexto no la respondas y menciona que solo posees información del curso de introducción.
         A las palabras más importantes de tu respuesta resaltalas con negrita
+        Si la respuesta implica pasos a seguir, enuméralos en una lista clara usando:
+        1.
+        2.
+        3.
+        o con viñetas para mayor claridad.
         # Contexto: {context}
     """)
 
@@ -179,16 +189,17 @@ def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: s
     # Truncate the conversation history to optimize token usage
     truncated_messages = truncate_messages(messages, max_tokens=1500)
     
-    # Construct the new messages to send to OpenAI by prepending the system prompt
+    # Construct new messages by prepending the system prompt to the conversation history
     new_messages = [{"role": "system", "content": system_prompt_formatted}] + truncated_messages
 
+    # Call OpenAI API with deterministic settings for consistency
     if protocol == 'data':
         stream_result = client.chat.completions.create(
             model="gpt-4o-mini", 
             messages=new_messages,
-            stream=True,
-            temperature=0.3,
-            max_tokens=512
+            temperature=0,
+            top_p=1,
+            stream=True
         )
 
         for chunk in stream_result:
@@ -226,6 +237,7 @@ async def handle_chat_data(request: Request, protocol: str = Query('data')):
             }
         )
     
+# Root endpoint for quick health check
 @app.get("/")
 async def root():
     return {"message": "Hello from FastAPI!"}
