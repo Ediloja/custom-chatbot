@@ -9,7 +9,6 @@
         "lint": "next lint"
     },
     "dependencies": {
-        "@ai-sdk/google": "^1.0.9",
         "@tabler/icons-react": "^3.27.1",
         "ai": "^4.0.16",
         "clsx": "^2.1.1",
