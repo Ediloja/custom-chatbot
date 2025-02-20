@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useChat, Message } from "ai/react";
 import cx from "@/app/lib/cx";
 import Chat from "@/app/ui/chat";
@@ -11,9 +11,21 @@ import Footer from "@/app/ui/footer";
 import { INITIAL_QUESTIONS } from "@/app/lib/questions";
 
 export default function Page() {
+    // State to store the chat history from sessionStorage
+    const [persistedMessages, setPersistedMessages] = useState<Message[]>([]);
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
 
+    // On component mount, load the chat history from sessionStorage if available
+    useEffect(() => {
+        const stored = sessionStorage.getItem("chatHistory");
+        if (stored) {
+            setPersistedMessages(JSON.parse(stored));
+        }
+    }, []);
+
+    // Initialize useChat with persisted messages or fallback to the default welcome message
     const {
         messages,
         input,
@@ -28,19 +40,27 @@ export default function Page() {
         api: "http://127.0.0.1:8000/api/chat",
         maxSteps: 4,
         streamProtocol: "data",
-        initialMessages: [
-            {
-                id: "0",
-                role: "system",
-                content: `**¡Hola! Soy SophiaUTPL**
+        initialMessages:
+            persistedMessages.length > 0
+                ? persistedMessages
+                : [
+                      {
+                          id: "0",
+                          role: "system",
+                          content: `**¡Hola! Soy SophiaUTPL**
 
 Tu asistente virtual para conquistar tus metas académicas.`,
-            },
-        ],
-
+                      },
+                  ],
         onError: (error) => console.log(`An error occurred ${error}`),
     });
 
+    // Save the current chat history to sessionStorage whenever 'messages' changes.
+    useEffect(() => {
+        sessionStorage.setItem("chatHistory", JSON.stringify(messages));
+    }, [messages]);
+
+    // When an initial question is clicked, set the input and dispatch a submit event.
     function handleClickInitialQuestion(value: string) {
         setInput(value);
         setTimeout(() => {
@@ -53,6 +73,7 @@ Tu asistente virtual para conquistar tus metas académicas.`,
         }, 1);
     }
 
+    // Auto-scroll to the bottom whenever messages update.
     useEffect(() => {
         if (messagesEndRef.current) {
             messagesEndRef.current.scrollIntoView();
@@ -64,32 +85,27 @@ Tu asistente virtual para conquistar tus metas académicas.`,
     return (
         <main className="relative mx-auto flex min-h-svh max-w-screen-md overflow-y-auto p-4 !pb-32 md:p-6 md:!pb-40">
             <div className="w-full">
-                {messages.map((message: Message) => {
-                    return <Chat key={message.id} {...message} />;
-                })}
+                {messages.map((message: Message) => (
+                    <Chat key={message.id} {...message} />
+                ))}
 
                 {isLoading && <Loading />}
-
                 {error && <Error />}
 
                 {messages.length === 1 && (
                     <div className="mt-4 grid gap-2 md:mt-6 md:grid-cols-2 md:gap-4">
-                        {INITIAL_QUESTIONS.map((message) => {
-                            return (
-                                <button
-                                    key={message.content}
-                                    type="button"
-                                    className="cursor-pointer select-none rounded-xl border border-gray-200 bg-white p-3 text-left font-normal text-black hover:border-zinc-400 hover:bg-zinc-50 md:px-4 md:py-3"
-                                    onClick={() =>
-                                        handleClickInitialQuestion(
-                                            message.content,
-                                        )
-                                    }
-                                >
-                                    {message.content}
-                                </button>
-                            );
-                        })}
+                        {INITIAL_QUESTIONS.map((message) => (
+                            <button
+                                key={message.content}
+                                type="button"
+                                className="cursor-pointer select-none rounded-xl border border-gray-200 bg-white p-3 text-left font-normal text-black hover:border-zinc-400 hover:bg-zinc-50 md:px-4 md:py-3"
+                                onClick={() =>
+                                    handleClickInitialQuestion(message.content)
+                                }
+                            >
+                                {message.content}
+                            </button>
+                        ))}
                     </div>
                 )}
 
