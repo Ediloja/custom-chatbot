@@ -69,7 +69,7 @@ async def startup_event():
         pc = Pinecone(api_key=PINECONE_API_KEY)
         index_name = "chatbot"
         index = pc.Index(index_name)
-        namespace = "testing-chatbot"
+        namespace = "chatbot"
         print("Index created successfully!")
     except Exception as exc:
         print("Error connecting to Pinecone:", exc)
