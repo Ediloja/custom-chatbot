@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import { useChat, Message } from "ai/react";
+import { useChat, Message } from "@ai-sdk/react";
 import cx from "@/app/lib/cx";
 import Chat from "@/app/ui/chat";
 import Form from "@/app/ui/form";
@@ -11,15 +11,16 @@ import Footer from "@/app/ui/footer";
 import { INITIAL_QUESTIONS } from "@/app/lib/questions";
 
 export default function Page() {
-    // State to store the chat history from sessionStorage
+    // State to store the chat history from localStorage
     const [persistedMessages, setPersistedMessages] = useState<Message[]>([]);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
 
-    // On component mount, load the chat history from sessionStorage if available
+    // On component mount, load the chat history from localStorage if available
     useEffect(() => {
-        const stored = sessionStorage.getItem("chatHistory");
+        const stored = localStorage.getItem("chatHistory");
+
         if (stored) {
             setPersistedMessages(JSON.parse(stored));
         }
@@ -31,6 +32,7 @@ export default function Page() {
         input,
         handleInputChange,
         handleSubmit,
+        status,
         setInput,
         isLoading,
         stop,
@@ -55,9 +57,9 @@ Tu asistente virtual para conquistar tus metas académicas.`,
         onError: (error) => console.log(`An error occurred ${error}`),
     });
 
-    // Save the current chat history to sessionStorage whenever 'messages' changes.
+    // Save the current chat history to localStorage whenever 'messages' changes.
     useEffect(() => {
-        sessionStorage.setItem("chatHistory", JSON.stringify(messages));
+        localStorage.setItem("chatHistory", JSON.stringify(messages));
     }, [messages]);
 
     // When an initial question is clicked, set the input and dispatch a submit event.
@@ -80,8 +82,6 @@ Tu asistente virtual para conquistar tus metas académicas.`,
         }
     }, [messages]);
 
-    console.log(messages);
-
     return (
         <main className="relative mx-auto flex min-h-svh max-w-screen-md overflow-y-auto p-4 !pb-32 md:p-6 md:!pb-40">
             <div className="w-full">
@@ -89,7 +89,8 @@ Tu asistente virtual para conquistar tus metas académicas.`,
                     <Chat key={message.id} {...message} />
                 ))}
 
-                {isLoading && <Loading />}
+                {status === "submitted" && <Loading />}
+
                 {error && <Error />}
 
                 {messages.length === 1 && (
