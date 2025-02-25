@@ -12,7 +12,7 @@ import { INITIAL_QUESTIONS } from "@/app/lib/questions";
 
 const defaultInitialMessage: Message = {
     id: "0",
-    role: "system" as "system",
+    role: "system" as const,
     content: `**¡Hola! Soy SophiaUTPL**
 
 Tu asistente virtual para conquistar tus metas académicas.`,
