@@ -1,5 +1,8 @@
 export const INITIAL_QUESTIONS = [
     {
+        content: "¿De qué trata el curso?",
+    },
+    {
         content: "¿Qué temas se abordan en este curso?",
     },
     {
@@ -8,8 +11,5 @@ export const INITIAL_QUESTIONS = [
     {
         content:
             "¿Cuáles son las fechas más importantes del periodo académico?",
-    },
-    {
-        content: "¿Me puedes dar un resumen de este curso?",
     },
 ];
