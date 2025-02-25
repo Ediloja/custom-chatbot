@@ -6,7 +6,7 @@ export const INITIAL_QUESTIONS = [
         content: "¿Qué actividades debo realizar en este curso?",
     },
     {
-        content: "¿Cuáles son las fechas importantes de este curso?",
+        content: "¿Cuáles son las fechas importantes del periodo académico?",
     },
     {
         content: "¿Me puedes dar un resumen de este curso?",
