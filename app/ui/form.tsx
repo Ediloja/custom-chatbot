@@ -9,7 +9,7 @@ interface FormProps {
     input: string;
     onChange: (event: ChangeEvent<HTMLInputElement>) => void;
     onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-    isLoading: boolean;
+    status: "submitted" | "streaming" | "ready" | "error";
     stop: () => void;
     error: Error | undefined;
     reload: () => void;
@@ -20,7 +20,7 @@ export default function Form({
     input,
     onChange,
     onSubmit,
-    isLoading,
+    status,
     stop,
     error,
     reload,
@@ -43,21 +43,22 @@ export default function Form({
                     "disabled:bg-gray-100",
                 )}
                 onChange={onChange}
-                disabled={isLoading}
+                disabled={status === "submitted" || status === "streaming"}
             />
-            {isLoading === false && error === undefined && (
+
+            {status === "ready" && (
                 <Button type="submit">
                     <IconArrowBack stroke={1.5} color="black" />
                 </Button>
             )}
 
-            {isLoading && (
+            {(status === "submitted" || status === "streaming") && (
                 <Button type="button" onClick={stop}>
                     <IconPlayerStop stroke={1.5} color="black" fill="black" />
                 </Button>
             )}
 
-            {error && (
+            {(status === "error" || error) && (
                 <Button type="submit" onClick={reload}>
                     <IconRefresh stroke={1.5} color="black" />
                 </Button>
