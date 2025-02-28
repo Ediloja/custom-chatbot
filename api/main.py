@@ -38,6 +38,7 @@ app = FastAPI(
 )
 
 # CORS
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://custom-chatbot-front-end.vercel.app"],
@@ -45,6 +46,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # OpenAI
 client = OpenAI()
@@ -86,15 +88,13 @@ async def startup_event():
     store = InMemoryStore()
 
     # Create text splitters for parent and child document chunks
-    parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
     child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
 
     # Create the document retriever
     retriever = ParentDocumentRetriever(
         vectorstore=vectorstore,
         docstore=store,
-        child_splitter=child_splitter,
-        parent_splitter=parent_splitter,
+        child_splitter=child_splitter
     )
 
     # Load and index documents
@@ -116,7 +116,8 @@ async def startup_event():
             "api/assets/guia-didactica-mad.pdf",
             "api/assets/preguntas-frecuentes-mad.pdf",
             "api/assets/preguntas-frecuentes-eva.pdf",
-            "api/assets/plan-docente-modificado.pdf"
+            "api/assets/plan-docente-modificado.pdf",
+            "api/assets/guia-del-estudiante.pdf"
         ]:
             # Convert each PDF into markdown pages (split by page)
             markdown_pages = to_markdown(doc=doc_path, page_chunks=True)
@@ -166,7 +167,7 @@ def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: s
     docs = retriever.invoke(last_query)
     context_items = [
             #'Documento: "guia-didactica-mad.pdf" - Contenido: "..." '
-            f"Documento: \"{doc.metadata.get('source', 'Desconocido')}\" - Cotenido: \"{doc.page_content}:\" "
+            f"Documento: \"{doc.metadata.get('source', 'Desconocido')}\" - Cotenido: \"\n{doc.page_content}:\" "
             for doc in docs   
         ]
     #Formatear como una sola cadena de texto
@@ -174,40 +175,34 @@ def stream_data_with_rag(messages: List[ChatCompletionMessageParam], protocol: s
 
     # Build the system prompt to enforce that answers are based primarily on the document context.
     system_prompt = (
-    """
-    # Instrucciones para el Sistema:
-        Genera respuestas para las preguntas del usuario únicamente a partir del contexto proporcionado.
-        FINGE que la información proporcionada en 'CONTEXTO' es de tu conocimiento general para que la interacción sea más agradable.
-        EVITA FRASES como 'según la información', 'según los documentos' 'de acuerdo a la información' etc.
-        Responde con explicaciones claras y detalladas. 
-        Asegúrante de proporcionar los enlaces que vienen dentro del contexto proporcionalo, como recomendación para el usuario y su aprendizaje;
-        Si la pregunta está fuera de contexto no la respondas y menciona que solo posees información del curso de introducción.
-        A las palabras más importantes de tu respuesta resaltalas con negrita
-        Si la respuesta implica pasos a seguir, enuméralos en una lista clara usando: 1. 2. 3. o con viñetas para mayor claridad.
-        - Cuando el usuario pregunte sobre actividades del curso, prioriza la información del documento de plan-docente. 
-        - Solo menciona actividades de la guia-didactica si no hay detalles específicos en el documento de plan-docente.
-    ### Explicación de los documentos:
-        Documento Plan Docente (plan-docente-modificado.pdf): “Este documento contiene las actividades específicas de este curso de introducción a la modalidad a distancia. Usa esta información para responder preguntas sobre qué actividades realizar.”
-        Documento Guíá Didáctica (guia-didactica-mad.pdf): “Este documento explica las actividades típicas que se suelen encontrar en cursos a distancia, además de información complementaria para el plan docente. Solo úsalo si no hay información relevante en el documento plan docente.”
-    ## Manejo de referencias:
-    - El usuario quiere saber de que documentos se extrae la información. Incluye la referencia al final de tu respuesta.
-    - Utiliza la siguiente estructura para referenciar los documentos:
-    *Extraído de *[fuente 1]* y *[fuente 2]**.
-    Por ejemplo: “Extraído del Plan Docente y la Guía Didáctica” o “Extraído de la Guía Didáctica y [FAQ Estudiantes](https://utpl.instructure.com/courses/25885/pages/faq-estudiantes)”.
-    - Para idenfiticar el nombre de las fuentes sigue estas instrucciones específicas:
-        - Si el documento es: **(preguntas-frecuentes-eva.pdf, preguntas-frecuentes-mad.pdf):** No menciones el nombre del documento; en su lugar di que la información proviene de: [FAQ Estudiantes](https://utpl.instructure.com/courses/25885/pages/faq-estudiantes) al final de tu respuesta.
-        - Si el documento es: **plan-docente-modificado.pdf:** Menciona que la información proviene "del Plan Docente".
-        - Si el documento es: **guia-didactica-mad.pdf:** Menciona que la información proviene "de la Guía Didáctica".
-        - Si el documento es: **calendario-academico-mad-abril-agosto-2025.pdf:** Menciona que la información proviene "del Calendario Académico".
-    Aunque sean múltiples documentos en el contexto, menciona exclusivamente los nombres de los documentos que se han utilizado en la respuesta.
-    # Contexto: 
-    {context}
-    """
+        """
+        # Instrucciones para el Sistema:
+            Genera respuestas para las preguntas del usuario únicamente a partir del contexto proporcionado.
+            FINGE que la información proporcionada en 'CONTEXTO' es de tu conocimiento general para que la interacción sea más agradable.
+            EVITA FRASES como 'según la información', 'según los documentos' 'de acuerdo a la información' etc.
+            Responde con explicaciones claras y detalladas. 
+            Asegúrate de proporcionar los enlaces que vienen dentro del contexto proporcionado, como recomendación para el usuario y su aprendizaje;
+            Si la pregunta está fuera de contexto no la respondas y menciona que solo posees información del curso de introducción.
+            Resalta en **negrita** las palabras clave y conceptos importantes para facilitar la comprensión del usuario.
+            Si la respuesta implica pasos a seguir, enuméralos en una lista clara usando: 1. 2. 3. o con viñetas para mayor claridad.
+            Si una pregunta requiere que la respuesta sea de tipo resumen o síntesis, asegúrate de proporcionar una respuesta concisa y precisa. 
+            - Cuando el usuario pregunte sobre actividades del curso, asegúrate de dar respuestas completas con todas las actividades, utiliza la información del documento de plan-docente, en las subseccion de Actividades de Aprendizaje. 
+            - Solo menciona actividades de la guia-didactica si no hay detalles específicos en el documento de plan-docente.
+        ## Explicación de los documentos:
+            Documento Plan Docente (plan-docente-modificado.pdf): Contiene las actividades específicas del curso. Es la principal fuente para responder sobre qué actividades realizar en cada semana y calificaciones de actividades, además de vista general sobre temas y unidades.
+            Documento Guíá Didáctica (guia-didactica-mad.pdf): Contiene temas y conceptos correspondientes al curso.
+            Documento Calendario Académico (calendario-academico-mad-abril-agosto-2025.pdf): Este documento contiene las fechas del semestre actual, como fechas de evaluaciones, inicio de actividades, etc. Las fechas más importantes son las de evaluaciones, actividades y publicaciones de notas.
+            No menciones feriados, vacaciones y fin de tutorías cuando te pregunten acerca de las fechas importantes.
+            Documentos de Preguntas Frecuentes: Estos documentos contienen información de preguntas frecuentes de los estudiantes. Úsalos para responder preguntas comunes de los estudiantes, trata de no mezclarlos con la guía didáctica. 
+        ## Excepciones:
+            - Si el usuario pregunta literalmente ¿Cuáles son las actividades del curso? responde con "Las actividades del curso incluyen foros, cuestionarios, videocolaboraciones y autoevaluaciones distribuidas en 5 semanas, si quieres más información detallada de una semana en específico puedes preguntarme por la semana que te interese.",
+            en el caso de que la pregunta sea las actividades de **los cursos en el EVA** si responde usando el contexto.
+        # Contexto: 
+        {context}
+        """
     )
 
-
     system_prompt_formatted = system_prompt.format(context=docs_text)
-
     # Truncate the conversation history to optimize token usage
     truncated_messages = truncate_messages(messages, max_tokens=1500)
     
