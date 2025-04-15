@@ -92,7 +92,7 @@ export default function Page() {
     console.log(`Error is ${error}`);
 
     return (
-        <main className="relative mx-auto flex min-h-svh max-w-screen-md overflow-y-auto p-4 !pb-32 md:p-6 md:!pb-40">
+        <main className="relative mx-auto flex min-h-svh max-w-(--breakpoint-md) overflow-y-auto p-4 pb-32! md:p-6 md:pb-40!">
             <div className="w-full">
                 {messages.map((message: Message) => (
                     <Chat key={message.id} {...message} />
@@ -126,7 +126,7 @@ export default function Page() {
                         "fixed inset-x-0 bottom-0 z-10 flex items-center justify-center bg-white",
                     )}
                 >
-                    <div className="w-full max-w-screen-md rounded-xl px-4 py-6 md:px-5">
+                    <div className="w-full max-w-(--breakpoint-md) rounded-xl px-4 py-6 md:px-5">
                         <Form
                             ref={formRef}
                             input={input}
