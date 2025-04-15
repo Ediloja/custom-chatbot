@@ -52,11 +52,11 @@ export default function Page() {
         error,
         reload,
     } = useChat({
-        api: "https://custom-chatbot-production.up.railway.app/api/chat",
-        maxSteps: 4,
-        streamProtocol: "data",
+        // api: "https://custom-chatbot-production.up.railway.app/api/chat",
+        // maxSteps: 4,
+        // streamProtocol: "data",
         initialMessages: initialMessages,
-        onError: (error) => console.log(`An error occurred ${error}`),
+        onError: (error) => console.log(error),
     });
 
     // sessionStorage
@@ -87,10 +87,6 @@ export default function Page() {
         }
     }, [messages]);
 
-    console.log(messages);
-    console.log(`Status is ${status}`);
-    console.log(`Error is ${error}`);
-
     return (
         <main className="relative mx-auto flex min-h-svh max-w-(--breakpoint-md) overflow-y-auto p-4 pb-32! md:p-6 md:pb-40!">
             <div className="w-full">
@@ -108,7 +104,7 @@ export default function Page() {
                             <button
                                 key={message.content}
                                 type="button"
-                                className="cursor-pointer select-none rounded-xl border border-gray-200 bg-white p-3 text-left font-normal text-black hover:border-zinc-400 hover:bg-zinc-50 md:px-4 md:py-3"
+                                className="cursor-pointer rounded-xl border border-gray-200 bg-white p-3 text-left font-normal text-black select-none hover:border-zinc-400 hover:bg-zinc-50 md:px-4 md:py-3"
                                 onClick={() =>
                                     handleClickInitialQuestion(message.content)
                                 }
