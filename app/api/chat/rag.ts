@@ -1,4 +1,5 @@
 import "dotenv/config";
+import path from "path";
 import { DirectoryLoader } from "langchain/document_loaders/fs/directory";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
@@ -27,8 +28,8 @@ function validateRequiredEnvironmentVariables(): void {
     }
 }
 
-// Ruta relativa de los documentos PDF
-const documentsPath: string = "./../../assets/";
+// Ruta absoluta de los documentos PDF (robusta ante la ubicación de ejecución)
+const documentsPath: string = path.resolve(process.cwd(), "../../assets");
 
 // Cargar los documentos PDF desde el directorio especificado
 async function loadPDFDocuments(documentsPath: string): Promise<Document[]> {
