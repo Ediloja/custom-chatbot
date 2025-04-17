@@ -7,8 +7,28 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { PineconeStore } from "@langchain/pinecone";
 import { Pinecone as PineconeClient } from "@pinecone-database/pinecone";
 
-// Path de los documentos PDF
-const documentsPath = "./../../assets/";
+// Verifica que todas las variables de entorno requeridas estén presentes
+function validateRequiredEnvironmentVariables(): void {
+    const requiredEnvironmentVariables: string[] = [
+        "PINECONE_API_KEY",
+        "PINECONE_INDEX",
+        "OPENAI_API_KEY",
+    ];
+
+    const missingEnvironmentVariables: string[] =
+        requiredEnvironmentVariables.filter(
+            (environmentVariable) => !process.env[environmentVariable],
+        );
+
+    if (missingEnvironmentVariables.length > 0) {
+        throw new Error(
+            `Missing required environment variables: ${missingEnvironmentVariables.join(", ")}`,
+        );
+    }
+}
+
+// Ruta relativa de los documentos PDF
+const documentsPath: string = "./../../assets/";
 
 // Carga los documentos PDF desde el directorio especificado
 async function loadPDFDocuments(documentsPath: string): Promise<Document[]> {
@@ -34,7 +54,7 @@ async function splitPDFDocuments(
 }
 
 // Procesa los documentos PDF
-async function processPDFDocuments() {
+async function processPDFDocuments(): Promise<Document[]> {
     try {
         const documents = await loadPDFDocuments(documentsPath);
         const splitDocuments = await splitPDFDocuments(documents);
@@ -50,14 +70,14 @@ async function processPDFDocuments() {
 }
 
 // Crea los embeddings de OpenAI
-function createEmbeddings() {
+function createEmbeddings(): OpenAIEmbeddings {
     return new OpenAIEmbeddings({
         model: "text-embedding-3-small",
     });
 }
 
 // Conecta con Pinecone usando la variable de entorno
-function connectToPinecone() {
+function connectToPinecone(): ReturnType<PineconeClient["Index"]> {
     if (!process.env.PINECONE_INDEX) {
         throw new Error(
             "PINECONE_INDEX is not defined in environment variables.",
@@ -69,16 +89,10 @@ function connectToPinecone() {
     return pinecone.Index(process.env.PINECONE_INDEX!);
 }
 
-// Inicializa la conexión y almacenamiento en Pinecone
-async function initializePinecone() {
+// Función principal para orquestar el flujo completo de RAG
+async function runRAGPipeline(): Promise<void> {
     try {
-        if (
-            !process.env.PINECONE_API_KEY ||
-            !process.env.PINECONE_INDEX ||
-            !process.env.OPENAI_API_KEY
-        ) {
-            throw new Error("Missing required environment variables.");
-        }
+        validateRequiredEnvironmentVariables();
 
         const embeddings = createEmbeddings();
         const pineconeIndex = connectToPinecone();
@@ -95,8 +109,8 @@ async function initializePinecone() {
             "Vector store initialized and documents added successfully.",
         );
     } catch (error) {
-        console.error("Initialization failed:", error);
+        console.error("RAG pipeline initialization failed:", error);
     }
 }
 
-initializePinecone();
+runRAGPipeline();
