@@ -7,7 +7,7 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { PineconeStore } from "@langchain/pinecone";
 import { Pinecone as PineconeClient } from "@pinecone-database/pinecone";
 
-// Verifica que todas las variables de entorno requeridas estén presentes
+// Verificar que existan todas las variables de entorno requeridas
 function validateRequiredEnvironmentVariables(): void {
     const requiredEnvironmentVariables: string[] = [
         "PINECONE_API_KEY",
@@ -30,7 +30,7 @@ function validateRequiredEnvironmentVariables(): void {
 // Ruta relativa de los documentos PDF
 const documentsPath: string = "./../../assets/";
 
-// Carga los documentos PDF desde el directorio especificado
+// Cargar los documentos PDF desde el directorio especificado
 async function loadPDFDocuments(documentsPath: string): Promise<Document[]> {
     const directoryLoader = new DirectoryLoader(documentsPath, {
         ".pdf": (filePath: string) => new PDFLoader(filePath),
@@ -39,7 +39,7 @@ async function loadPDFDocuments(documentsPath: string): Promise<Document[]> {
     return await directoryLoader.load();
 }
 
-// Divide los documentos en chunks para procesamiento
+// Dividir los documentos en chunks para el procesamiento
 async function splitPDFDocuments(
     documents: Document[],
     chunkSize: number = 1000,
@@ -53,7 +53,7 @@ async function splitPDFDocuments(
     return await textSplitter.splitDocuments(documents);
 }
 
-// Procesa los documentos PDF
+// Procesar los documentos PDF
 async function processPDFDocuments(): Promise<Document[]> {
     try {
         const documents = await loadPDFDocuments(documentsPath);
@@ -69,14 +69,14 @@ async function processPDFDocuments(): Promise<Document[]> {
     }
 }
 
-// Crea los embeddings de OpenAI
+// Modelo de embeddings de OpenAI
 function createEmbeddings(): OpenAIEmbeddings {
     return new OpenAIEmbeddings({
         model: "text-embedding-3-small",
     });
 }
 
-// Conecta con Pinecone usando la variable de entorno
+// Conexión con Pinecone
 function connectToPinecone(): ReturnType<PineconeClient["Index"]> {
     if (!process.env.PINECONE_INDEX) {
         throw new Error(
@@ -89,7 +89,7 @@ function connectToPinecone(): ReturnType<PineconeClient["Index"]> {
     return pinecone.Index(process.env.PINECONE_INDEX!);
 }
 
-// Función principal para orquestar el flujo completo de RAG
+// Función principal para ejecutar el pipeline RAG
 async function runRAGPipeline(): Promise<void> {
     try {
         validateRequiredEnvironmentVariables();
