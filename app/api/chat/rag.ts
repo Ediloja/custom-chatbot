@@ -29,7 +29,7 @@ function validateRequiredEnvironmentVariables(): void {
 }
 
 // Ruta absoluta de los documentos PDF (robusta ante la ubicación de ejecución)
-const documentsPath: string = path.resolve(process.cwd(), "../../assets");
+const documentsPath: string = path.resolve(process.cwd(), "../../assets/");
 
 // Cargar los documentos PDF desde el directorio especificado
 async function loadPDFDocuments(documentsPath: string): Promise<Document[]> {
