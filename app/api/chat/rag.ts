@@ -100,7 +100,7 @@ async function runRAGPipeline(): Promise<void> {
         const vectorStore = await PineconeStore.fromExistingIndex(embeddings, {
             pineconeIndex,
             maxConcurrency: 5,
-            namespace: "rag-chatbot-nextjs",
+            namespace: "mad-testing",
         });
         const documents = await processPDFDocuments();
 
@@ -109,6 +109,17 @@ async function runRAGPipeline(): Promise<void> {
         console.log(
             "Vector store initialized and documents added successfully.",
         );
+
+        const retriver = vectorStore.asRetriever();
+
+        const docs = await retriver.invoke("Cursos MOOC");
+
+        console.log("Retrieved documents:");
+
+        for (const doc of docs) {
+            console.log(`Document: ${doc.pageContent}\n`);
+            // console.log("Metadata:", doc.metadata);
+        }
     } catch (error) {
         console.error("RAG pipeline initialization failed:", error);
     }
