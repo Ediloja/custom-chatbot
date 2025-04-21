@@ -73,6 +73,7 @@ async def startup_event():
         index = pc.Index(index_name)
         namespace = "chatbot-imad"
         print("Index connected successfully!")
+        print("Namespace:", namespace)
     except Exception as exc:
         print("Error connecting to Pinecone:", exc)
 
