@@ -43,7 +43,7 @@ async function loadPDFDocuments(documentsPath: string): Promise<Document[]> {
 // Dividir los documentos en chunks para el procesamiento
 async function splitPDFDocuments(
     documents: Document[],
-    chunkSize: number = 1000,
+    chunkSize: number = 500,
     chunkOverlap: number = 200,
 ): Promise<Document[]> {
     const textSplitter = new RecursiveCharacterTextSplitter({
@@ -60,7 +60,7 @@ async function processPDFDocuments(): Promise<Document[]> {
         const documents = await loadPDFDocuments(documentsPath);
         const splitDocuments = await splitPDFDocuments(documents);
 
-        console.log("Sample split documents:", splitDocuments.slice(0, 3));
+        // console.log("Sample split documents:", splitDocuments.slice(0, 3));
 
         return splitDocuments;
     } catch (error) {
@@ -110,15 +110,16 @@ async function runRAGPipeline(): Promise<void> {
             "Vector store initialized and documents added successfully.",
         );
 
-        const retriver = vectorStore.asRetriever();
+        const retriever = vectorStore.asRetriever();
 
-        const docs = await retriver.invoke("Cursos MOOC");
+        const retrievedDocuments = await retriever.invoke(
+            "¿Cuáles son las fechas importantes de este curso?",
+        );
 
         console.log("Retrieved documents:");
 
-        for (const doc of docs) {
-            console.log(`Document: ${doc.pageContent}\n`);
-            // console.log("Metadata:", doc.metadata);
+        for (const document of retrievedDocuments) {
+            console.log(`Document: ${document.pageContent}\n`);
         }
     } catch (error) {
         console.error("RAG pipeline initialization failed:", error);
