@@ -97,11 +97,16 @@ async function runRAGPipeline(): Promise<void> {
 
         const embeddings = createEmbeddings();
         const pineconeIndex = connectToPinecone();
+
+        // Limpiar el índice de Pinecone antes de agregar nuevos documentos
+        pineconeIndex.namespace("mad-testing").deleteAll();
+
         const vectorStore = await PineconeStore.fromExistingIndex(embeddings, {
             pineconeIndex,
             maxConcurrency: 5,
             namespace: "mad-testing",
         });
+
         const documents = await processPDFDocuments();
 
         await vectorStore.addDocuments(documents);
