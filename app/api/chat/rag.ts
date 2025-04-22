@@ -100,6 +100,7 @@ async function runRAGPipeline(): Promise<void> {
 
         // Limpiar el índice de Pinecone antes de agregar nuevos documentos
         pineconeIndex.namespace("mad-testing").deleteAll();
+        console.log("Pinecone index cleared.");
 
         const vectorStore = await PineconeStore.fromExistingIndex(embeddings, {
             pineconeIndex,
