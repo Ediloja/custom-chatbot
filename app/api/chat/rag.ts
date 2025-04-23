@@ -98,10 +98,6 @@ async function runRAGPipeline(): Promise<void> {
         const embeddings = createEmbeddings();
         const pineconeIndex = connectToPinecone();
 
-        // Limpiar el índice de Pinecone antes de agregar nuevos documentos
-        pineconeIndex.namespace("mad-testing").deleteAll();
-        console.log("Pinecone index cleared.");
-
         const vectorStore = await PineconeStore.fromExistingIndex(embeddings, {
             pineconeIndex,
             maxConcurrency: 5,
@@ -115,18 +111,6 @@ async function runRAGPipeline(): Promise<void> {
         console.log(
             "Vector store initialized and documents added successfully.",
         );
-
-        const retriever = vectorStore.asRetriever();
-
-        const retrievedDocuments = await retriever.invoke(
-            "¿Cuáles son las fechas importantes de este curso?",
-        );
-
-        console.log("Retrieved documents:");
-
-        for (const document of retrievedDocuments) {
-            console.log(`Document: ${document.pageContent}\n`);
-        }
     } catch (error) {
         console.error("RAG pipeline initialization failed:", error);
     }
